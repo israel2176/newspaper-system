@@ -102,8 +102,9 @@ const Viewer = (() => {
   function updateNavButtons() {
     if (!pageFlip) return;
     const cur = pageFlip.getCurrentPageIndex();
-    document.getElementById('btn-prev').disabled = cur <= 0;
-    document.getElementById('btn-next').disabled = cur >= currentIssue.pages - 1;
+    // RTL Hebrew: left button (btn-prev) = go forward, right button (btn-next) = go back
+    document.getElementById('btn-prev').disabled = cur >= currentIssue.pages - 1;
+    document.getElementById('btn-next').disabled = cur <= 0;
   }
 
   // ── Open ───────────────────────────────────────────────────────────────────
@@ -172,7 +173,8 @@ const Viewer = (() => {
       pageFlip = null;
     }
     currentIssue = null;
-    document.getElementById('flipbook-container').innerHTML = '';
+    const container = document.getElementById('flipbook-container');
+    if (container) container.innerHTML = '';
   }
 
   function next() {
@@ -198,8 +200,9 @@ const Viewer = (() => {
     const viewerVisible = !document.getElementById('viewer-view').classList.contains('hidden');
     if (!viewerVisible) return;
 
-    if (e.key === 'ArrowLeft'  || e.key === 'ArrowDown'  || e.key === ' ') { e.preventDefault(); next(); }
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp')                      { e.preventDefault(); prev(); }
+    // RTL Hebrew: right arrow = forward in book (toward lower pages), left = back
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     { e.preventDefault(); prev(); }
     if (e.key === 'Escape')                                                  { window.App.showArchive(); }
     if (e.key === 'f' || e.key === 'F')                                      { toggleFullscreen(); }
   });
@@ -207,9 +210,10 @@ const Viewer = (() => {
   // ── Wire up toolbar buttons ────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-prev').addEventListener('click', prev);
-    document.getElementById('btn-next').addEventListener('click', next);
-    document.getElementById('btn-back').addEventListener('click', () => window.App.showArchive());
+    // RTL Hebrew: left button (btn-prev) = forward in book, right button (btn-next) = back
+    document.getElementById('btn-prev').addEventListener('click', next);
+    document.getElementById('btn-next').addEventListener('click', prev);
+    document.getElementById('btn-back').addEventListener('click', () => window.App.showHome());
     document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
   });
 

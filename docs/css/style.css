@@ -46,19 +46,19 @@ body {
 
 #masthead {
   background: #fff;
-  border-top: 3px solid var(--red);
+  border-top: 1.5px solid var(--ink);
   border-bottom: 1px solid #ede8df;
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0.45rem 1.5rem;
+  padding: 0.22rem 1.5rem;
   box-shadow: 0 2px 18px rgba(0,0,0,0.06);
   transition: box-shadow 0.35s ease, padding 0.3s ease;
 }
 
 #masthead.masthead--scrolled {
-  padding-top: 0.28rem;
-  padding-bottom: 0.28rem;
+  padding-top: 0.12rem;
+  padding-bottom: 0.12rem;
   box-shadow: 0 6px 32px rgba(0,0,0,0.13);
 }
 

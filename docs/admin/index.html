@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ניהול גיליונות</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f1117;
+      --surface: #1a1d27;
+      --border:  #2a2d3a;
+      --accent:  #a8201a;
+      --accent2: #c0392b;
+      --text:    #e8e6e1;
+      --muted:   #6b7280;
+      --green:   #16a34a;
+      --font:    'Heebo', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Login screen ── */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .login-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1.8rem;
+    }
+
+    .login-card input[type="password"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      direction: ltr;
+      text-align: left;
+      transition: border-color 0.2s;
+    }
+
+    .login-card input[type="password"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-primary:hover  { background: var(--accent2); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .login-error {
+      color: #f87171;
+      font-size: 0.82rem;
+      margin-top: 0.6rem;
+      min-height: 1.2em;
+    }
+
+    /* ── Main app ── */
+    #app-screen { display: none; flex: 1; flex-direction: column; }
+
+    header.admin-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .admin-header h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .admin-header span {
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.2rem 0.6rem;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .btn-logout:hover { color: var(--text); border-color: var(--text); }
+
+    main.admin-main {
+      flex: 1;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) { main.admin-main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group input[type="number"],
+    .form-group input[type="date"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.88rem;
+      padding: 0.55rem 0.8rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus { outline: none; border-color: var(--accent); }
+
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 1.4rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .file-drop:hover,
+    .file-drop.drag-over { border-color: var(--accent); background: rgba(168,32,26,0.05); }
+
+    .file-drop input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-drop-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+
+    .file-drop-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .file-drop-name {
+      font-size: 0.82rem;
+      color: var(--text);
+      font-weight: 500;
+      margin-top: 0.4rem;
+    }
+
+    .btn-upload {
+      width: 100%;
+      margin-top: 1.1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-upload:hover:not(:disabled) { background: var(--accent2); }
+    .btn-upload:active:not(:disabled) { transform: scale(0.97); }
+    .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* progress */
+    .progress-wrap {
+      margin-top: 0.9rem;
+      display: none;
+    }
+
+    .progress-bar-bg {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    .alert {
+      border-radius: 6px;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.82rem;
+      margin-top: 0.9rem;
+      display: none;
+    }
+
+    .alert-success { background: #14532d22; border: 1px solid #16a34a55; color: #86efac; }
+    .alert-error   { background: #7f1d1d22; border: 1px solid #ef444455; color: #fca5a5; }
+
+    /* issues list */
+    .issues-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .issue-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.82rem;
+    }
+
+    .issue-row-info { flex: 1; min-width: 0; }
+    .issue-row-num  { font-weight: 700; color: var(--text); }
+    .issue-row-date { color: var(--muted); font-size: 0.75rem; }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid #3a2222;
+      border-radius: 4px;
+      color: #f87171;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-delete:hover { background: #7f1d1d33; }
+
+    .issues-empty { color: var(--muted); font-size: 0.82rem; text-align: center; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── Login ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <p class="login-logo">עמנואל שלי</p>
+    <h1 class="login-title">כניסת מנהל</h1>
+    <input type="password" id="token-input" placeholder="טוקן גישה" autocomplete="current-password">
+    <button class="btn-primary" id="btn-login">כניסה</button>
+    <p class="login-error" id="login-error"></p>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app-screen">
+  <header class="admin-header">
+    <h1>ניהול גיליונות — עמנואל שלי</h1>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <span id="api-status">🟢 מחובר</span>
+      <button class="btn-logout" id="btn-logout">יציאה</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+
+    <!-- Upload form -->
+    <div class="card">
+      <p class="card-title">העלאת גיליון חדש</p>
+
+      <div class="form-group">
+        <label>מספר גיליון</label>
+        <input type="number" id="f-number" placeholder="286" min="1">
+      </div>
+
+      <div class="form-group">
+        <label>תאריך גיליון</label>
+        <input type="date" id="f-date">
+      </div>
+
+      <div class="file-drop" id="file-drop">
+        <input type="file" id="f-file" accept=".pdf">
+        <div class="file-drop-icon">📄</div>
+        <p class="file-drop-text">גרור PDF לכאן או לחץ לבחירה</p>
+        <p class="file-drop-name" id="file-name"></p>
+      </div>
+
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+        <p class="progress-label" id="progress-label">מעלה…</p>
+      </div>
+
+      <div class="alert alert-success" id="alert-success"></div>
+      <div class="alert alert-error"   id="alert-error"></div>
+
+      <button class="btn-upload" id="btn-upload" disabled>
+        <span>העלה גיליון</span>
+      </button>
+    </div>
+
+    <!-- Issues list -->
+    <div class="card">
+      <p class="card-title">גיליונות קיימים</p>
+      <div class="issues-list" id="issues-list">
+        <p class="issues-empty">טוען…</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+'use strict';
+
+const API = '/api';
+let TOKEN = sessionStorage.getItem('admin_token') || '';
+
+// ── auth ──────────────────────────────────────────────────────────────────────
+
+async function tryLogin(token) {
+  const res = await fetch(`${API}/issues`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.ok;
+}
+
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) return;
+  document.getElementById('btn-login').textContent = '…';
+  const ok = await tryLogin(token).catch(() => false);
+  document.getElementById('btn-login').textContent = 'כניסה';
+  if (ok) {
+    TOKEN = token;
+    sessionStorage.setItem('admin_token', token);
+    showApp();
+  } else {
+    document.getElementById('login-error').textContent = 'טוקן שגוי';
+  }
+});
+
+document.getElementById('token-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => {
+  sessionStorage.removeItem('admin_token');
+  TOKEN = '';
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
+// ── app ───────────────────────────────────────────────────────────────────────
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  loadIssues();
+}
+
+async function loadIssues() {
+  const list = document.getElementById('issues-list');
+  try {
+    const res  = await fetch(`${API}/issues`, { headers: { Authorization: `Bearer ${TOKEN}` } });
+    const data = await res.json();
+    const issues = data.issues || [];
+    if (!issues.length) {
+      list.innerHTML = '<p class="issues-empty">אין גיליונות עדיין</p>';
+      return;
+    }
+    list.innerHTML = issues.map(i => `
+      <div class="issue-row">
+        <div class="issue-row-info">
+          <span class="issue-row-num">גיליון ${i.number}</span>
+          <span class="issue-row-date"> · ${i.date} · ${i.pages} עמ'</span>
+        </div>
+        <button class="btn-delete" data-id="${i.id}">מחק</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`למחוק גיליון ${btn.dataset.id}?`)) return;
+        await fetch(`${API}/issues/${btn.dataset.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${TOKEN}` }
+        });
+        loadIssues();
+      });
+    });
+  } catch {
+    list.innerHTML = '<p class="issues-empty">שגיאה בטעינה</p>';
+  }
+}
+
+// ── file drop ─────────────────────────────────────────────────────────────────
+
+const fileDrop = document.getElementById('file-drop');
+const fileInput = document.getElementById('f-file');
+
+fileInput.addEventListener('change', () => updateFileName(fileInput.files[0]));
+
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) {
+    const dt = new DataTransfer();
+    dt.items.add(e.dataTransfer.files[0]);
+    fileInput.files = dt.files;
+    updateFileName(e.dataTransfer.files[0]);
+  }
+});
+
+function updateFileName(file) {
+  document.getElementById('file-name').textContent = file ? file.name : '';
+  checkReady();
+}
+
+['f-number', 'f-date', 'f-file'].forEach(id =>
+  document.getElementById(id).addEventListener('change', checkReady)
+);
+
+function checkReady() {
+  const ok = document.getElementById('f-number').value
+          && document.getElementById('f-date').value
+          && fileInput.files.length;
+  document.getElementById('btn-upload').disabled = !ok;
+}
+
+// ── upload ────────────────────────────────────────────────────────────────────
+
+document.getElementById('btn-upload').addEventListener('click', async () => {
+  const number = document.getElementById('f-number').value;
+  const date   = document.getElementById('f-date').value;
+  const file   = fileInput.files[0];
+  if (!number || !date || !file) return;
+
+  const form = new FormData();
+  form.append('number', number);
+  form.append('date', date);
+  form.append('file', file);
+
+  // UI state
+  document.getElementById('btn-upload').disabled = true;
+  document.getElementById('alert-success').style.display = 'none';
+  document.getElementById('alert-error').style.display = 'none';
+  const prog = document.getElementById('progress-wrap');
+  const bar  = document.getElementById('progress-bar');
+  const lbl  = document.getElementById('progress-label');
+  prog.style.display = 'block';
+  bar.style.width = '10%';
+  lbl.textContent = 'מעלה קובץ…';
+
+  try {
+    // Use XHR for real upload progress
+    const result = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API}/upload`);
+      xhr.setRequestHeader('Authorization', `Bearer ${TOKEN}`);
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 60);
+          bar.style.width = pct + '%';
+          lbl.textContent = `מעלה… ${pct}%`;
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status === 200) resolve(JSON.parse(xhr.responseText));
+        else reject(new Error(xhr.responseText));
+      };
+      xhr.onerror = () => reject(new Error('שגיאת רשת'));
+      xhr.send(form);
+    });
+
+    bar.style.width = '80%';
+    lbl.textContent = 'מעבד PDF…';
+    await new Promise(r => setTimeout(r, 800));
+    bar.style.width = '100%';
+    lbl.textContent = 'הושלם!';
+
+    const s = document.getElementById('alert-success');
+    s.textContent = `✓ גיליון ${result.number} הועלה בהצלחה — ${result.pages} עמודים, ${result.size_mb} MB`;
+    s.style.display = 'block';
+
+    fileInput.value = '';
+    document.getElementById('file-name').textContent = '';
+    document.getElementById('f-number').value = '';
+    loadIssues();
+
+  } catch (err) {
+    bar.style.width = '100%';
+    bar.style.background = '#ef4444';
+    lbl.textContent = 'שגיאה';
+    const e = document.getElementById('alert-error');
+    e.textContent = '✗ ' + err.message;
+    e.style.display = 'block';
+  } finally {
+    document.getElementById('btn-upload').disabled = false;
+    checkReady();
+  }
+});
+
+// ── init ──────────────────────────────────────────────────────────────────────
+
+if (TOKEN) {
+  tryLogin(TOKEN).then(ok => {
+    if (ok) showApp();
+    else { sessionStorage.removeItem('admin_token'); TOKEN = ''; }
+  });
+}
+</script>
+</body>
+</html>

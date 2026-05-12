@@ -13,7 +13,7 @@ window.App = (() => {
     const d = String(date.getDate()).padStart(2, '0');
     const res  = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${y}-${m}-${d}&g2h=1`);
     const data = await res.json();
-    return (data.hebrew || '').replace(/״/g, '"');
+    return (data.hebrew || '').replace(/״/g, '"').replace(/[ְ-ׇ]/g, '');
   }
 
   // ── View switching ─────────────────────────────────────────────────────────

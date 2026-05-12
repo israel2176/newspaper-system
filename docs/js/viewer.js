@@ -1,4 +1,4 @@
-// viewer.js — PDF.js RTL newspaper viewer (no image conversion needed)
+// viewer.js — PDF.js single-page RTL newspaper viewer
 'use strict';
 
 const Viewer = (() => {
@@ -6,36 +6,27 @@ const Viewer = (() => {
   PDFJS.GlobalWorkerOptions.workerSrc =
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  let pdfDoc      = null;
-  let totalPages  = 0;
-  let currentPage = 1;   // right-side page number (RTL: page 1 is on the RIGHT)
+  let pdfDoc       = null;
+  let totalPages   = 0;
+  let currentPage  = 1;
   let currentIssue = null;
-  let rendering   = false;
-
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
-  function isMobile() { return window.innerWidth < 768; }
-
-  function spreadSize() { return isMobile() ? 1 : 2; }
+  let rendering    = false;
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
-  async function renderOnePage(pageNum, canvasId) {
-    const canvas = document.getElementById(canvasId);
+  async function renderPage(pageNum) {
+    const canvas = document.getElementById('canvas-right');
     if (!canvas || !pdfDoc || pageNum < 1 || pageNum > totalPages) return;
 
     const page   = await pdfDoc.getPage(pageNum);
     const spread = document.getElementById('spread-container');
 
-    // Fit page into half the spread width (or full width on mobile)
-    const slots    = isMobile() ? 1 : 2;
-    const availW   = Math.floor((spread.clientWidth - 16) / slots);
-    const availH   = spread.clientHeight - 4;
+    // Fill the full available area — each PDF page is already a full spread
+    const availW = spread.clientWidth  - 16;
+    const availH = spread.clientHeight - 4;
 
-    const base   = page.getViewport({ scale: 1 });
-    const scaleW = availW / base.width;
-    const scaleH = availH / base.height;
-    const scale  = Math.min(scaleW, scaleH);  // fit without cropping
+    const base  = page.getViewport({ scale: 1 });
+    const scale = Math.min(availW / base.width, availH / base.height);
 
     const vp = page.getViewport({ scale });
     canvas.width  = Math.round(vp.width);
@@ -46,25 +37,16 @@ const Viewer = (() => {
     await page.render({ canvasContext: ctx, viewport: vp }).promise;
   }
 
-  async function renderSpread(rightPage) {
+  async function renderSpread(pageNum) {
     if (rendering) return;
     rendering = true;
 
-    const leftPage  = rightPage + 1;
-    const mobile    = isMobile();
-    const canvasL   = document.getElementById('canvas-left');
+    // Second canvas not needed — each PDF page is already a full newspaper spread
+    document.getElementById('canvas-left').style.display = 'none';
 
     try {
-      await renderOnePage(rightPage, 'canvas-right');
-
-      if (!mobile && leftPage <= totalPages) {
-        await renderOnePage(leftPage, 'canvas-left');
-        canvasL.style.display = 'block';
-      } else {
-        canvasL.style.display = 'none';
-      }
-
-      updateIndicator(rightPage);
+      await renderPage(pageNum);
+      updateIndicator(pageNum);
       updateNavButtons();
     } finally {
       rendering = false;
@@ -74,40 +56,33 @@ const Viewer = (() => {
   // ── Navigation ─────────────────────────────────────────────────────────────
 
   function goNext() {
-    // RTL Hebrew: "next" = go deeper into newspaper = higher page numbers
-    const step = spreadSize();
-    if (currentPage + step <= totalPages) {
-      currentPage += step;
+    // ❯ right button = advance forward (higher page numbers)
+    if (currentPage < totalPages) {
+      currentPage += 1;
       renderSpread(currentPage);
     }
   }
 
   function goPrev() {
-    const step = spreadSize();
-    if (currentPage - step >= 1) {
-      currentPage -= step;
+    // ❮ left button = go back (lower page numbers)
+    if (currentPage > 1) {
+      currentPage -= 1;
       renderSpread(currentPage);
     }
   }
 
   // ── Controls ───────────────────────────────────────────────────────────────
 
-  function updateIndicator(rightPage) {
+  function updateIndicator(pageNum) {
     const el = document.getElementById('page-indicator');
-    if (!el) return;
-    const endPage = Math.min(rightPage + spreadSize() - 1, totalPages);
-    el.textContent = rightPage === endPage
-      ? `דף ${rightPage} מתוך ${totalPages}`
-      : `דפים ${rightPage}–${endPage} מתוך ${totalPages}`;
+    if (el) el.textContent = `דף ${pageNum} מתוך ${totalPages}`;
   }
 
   function updateNavButtons() {
-    // LEFT button (❮) = go forward in Hebrew newspaper
-    const btnLeft  = document.getElementById('btn-nav-left');
-    // RIGHT button (❯) = go back
-    const btnRight = document.getElementById('btn-nav-right');
-    if (btnLeft)  btnLeft.disabled  = currentPage + spreadSize() > totalPages;
-    if (btnRight) btnRight.disabled = currentPage <= 1;
+    const btnLeft  = document.getElementById('btn-nav-left');   // ❮ = go back
+    const btnRight = document.getElementById('btn-nav-right');  // ❯ = go forward
+    if (btnLeft)  btnLeft.disabled  = currentPage <= 1;
+    if (btnRight) btnRight.disabled = currentPage >= totalPages;
   }
 
   // ── Open / Close ───────────────────────────────────────────────────────────
@@ -156,7 +131,6 @@ const Viewer = (() => {
 
   document.addEventListener('keydown', (e) => {
     if (document.getElementById('viewer-view').classList.contains('hidden')) return;
-    // RTL: arrow-right = next page, arrow-left = prev page
     if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goNext(); }
     if (e.key === 'ArrowLeft')                    { e.preventDefault(); goPrev(); }
     if (e.key === 'Escape') { window.App.showHome(); }
@@ -177,8 +151,8 @@ const Viewer = (() => {
   // ── Wire buttons ───────────────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-nav-left').addEventListener('click', goNext);   // ❮ left = forward in Hebrew
-    document.getElementById('btn-nav-right').addEventListener('click', goPrev);  // ❯ right = back
+    document.getElementById('btn-nav-left').addEventListener('click', goPrev);   // ❮ = go back
+    document.getElementById('btn-nav-right').addEventListener('click', goNext);  // ❯ = go forward
     document.getElementById('btn-back').addEventListener('click', () => window.App.showHome());
     document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
   });

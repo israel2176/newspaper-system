@@ -44,6 +44,43 @@ body {
 
 .hidden { display: none !important; }
 
+/* ── Home tagline ─────────────────────────────────────────────────────────── */
+
+.home-tagline {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 680px;
+  margin: 2rem auto 1.4rem;
+  padding: 0 1.5rem;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.home-tagline-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to left, transparent, #c0b8a8);
+}
+
+.home-tagline-rule:first-child {
+  background: linear-gradient(to right, transparent, #c0b8a8);
+}
+
+.home-tagline-text {
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-align: center;
+}
+
 /* ── Masthead ─────────────────────────────────────────────────────────────── */
 
 #masthead {
@@ -87,7 +124,11 @@ body {
   border-radius: 10px;
   animation: logoEntrance 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   filter: drop-shadow(0 2px 8px rgba(40,40,100,0.12));
-  transition: filter 0.25s ease, transform 0.25s ease;
+  transition: filter 0.25s ease, transform 0.25s ease, height 0.3s ease;
+}
+
+#masthead.masthead--scrolled .masthead-logo {
+  height: clamp(30px, 5vw, 52px);
 }
 
 .masthead-logo:hover {

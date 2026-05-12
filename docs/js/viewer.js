@@ -13,6 +13,8 @@ const Viewer = (() => {
   let rendering    = false;
   let zoomScale    = 1;
 
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
   // ── Rendering ──────────────────────────────────────────────────────────────
 
   async function renderPage(pageNum) {
@@ -56,13 +58,51 @@ const Viewer = (() => {
     }
   }
 
+  // ── Page-flip animated navigation ─────────────────────────────────────────
+
+  async function animatedNavigate(newPage, direction) {
+    if (rendering) return;
+    rendering = true;
+
+    const container = document.getElementById('spread-container');
+    const canvas    = document.getElementById('canvas-right');
+    const exitClass  = direction === 'fwd' ? 'page-exit-fwd'  : 'page-exit-bwd';
+    const enterClass = direction === 'fwd' ? 'page-enter-fwd' : 'page-enter-bwd';
+
+    // 1. Flip current page out
+    container.classList.add(exitClass);
+    await delay(215);
+    container.classList.remove(exitClass);
+
+    // 2. Hide canvas while rendering new content
+    canvas.style.visibility = 'hidden';
+    document.getElementById('canvas-left').style.display = 'none';
+    applyZoomState();
+
+    try {
+      await renderPage(newPage);
+      updateIndicator(newPage);
+      updateNavButtons();
+    } finally {}
+
+    // 3. Reveal with enter animation (fill:both hides it at frame 0)
+    await delay(16);
+    canvas.style.visibility = '';
+    container.classList.add(enterClass);
+
+    setTimeout(() => {
+      container.classList.remove(enterClass);
+      rendering = false;
+    }, 340);
+  }
+
   // ── Navigation ─────────────────────────────────────────────────────────────
 
   function goNext() {
     if (currentPage < totalPages) {
       currentPage += 1;
       zoomScale = 1;
-      renderSpread(currentPage);
+      animatedNavigate(currentPage, 'fwd');
     }
   }
 
@@ -70,7 +110,7 @@ const Viewer = (() => {
     if (currentPage > 1) {
       currentPage -= 1;
       zoomScale = 1;
-      renderSpread(currentPage);
+      animatedNavigate(currentPage, 'bwd');
     }
   }
 

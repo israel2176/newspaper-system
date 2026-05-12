@@ -24,7 +24,8 @@ const Archive = (() => {
 
   function buildCard(issue) {
     const card = document.createElement('button');
-    card.className = 'issue-card';
+    const ioSupported = 'IntersectionObserver' in window;
+    card.className = 'issue-card' + (ioSupported ? ' card-hidden' : '');
     card.type = 'button';
     card.setAttribute('aria-label', `${issue.title} — ${formatDate(issue.date)}`);
 
@@ -61,6 +62,18 @@ const Archive = (() => {
     grid.className = 'issues-grid';
     for (const issue of issues) grid.appendChild(buildCard(issue));
     container.appendChild(grid);
+
+    if (!('IntersectionObserver' in window)) return;
+
+    const cards = Array.from(grid.querySelectorAll('.issue-card.card-hidden'));
+    const obs = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting);
+      visible.forEach((entry, i) => {
+        setTimeout(() => entry.target.classList.remove('card-hidden'), i * 60);
+        obs.unobserve(entry.target);
+      });
+    }, { threshold: 0.06 });
+    cards.forEach(c => obs.observe(c));
   }
 
   return { renderInto };

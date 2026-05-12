@@ -424,11 +424,17 @@ body {
   border: 1px solid var(--border);
   background: #fff;
   box-shadow: 2px 2px 0 var(--border);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.45s ease;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
+}
+
+.issue-card.card-hidden {
+  opacity: 0;
+  transform: translateY(18px) scale(0.97);
+  pointer-events: none;
 }
 
 .issue-card:hover,
@@ -528,12 +534,12 @@ body {
   width: min(460px, 90vw);
   box-shadow: 6px 6px 24px rgba(0,0,0,0.22);
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .featured-thumb:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 28px rgba(0,0,0,0.28);
+  transform: perspective(800px) rotateY(-4deg) rotateX(1.5deg) translate(-3px, -4px);
+  box-shadow: 14px 12px 36px rgba(0,0,0,0.32);
 }
 
 /* ── Previous issues section ──────────────────────────────────────────────── */
@@ -643,7 +649,33 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  transform-origin: center center;
+  will-change: transform, opacity;
 }
+
+/* ── Page-flip animations ─────────────────────────────────────────────────── */
+
+@keyframes pageExitFwd {
+  from { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
+  to   { transform: perspective(900px) rotateY(-26deg) translateX(-9%); opacity: 0; }
+}
+@keyframes pageEnterFwd {
+  from { transform: perspective(900px) rotateY(26deg)  translateX(9%);  opacity: 0; }
+  to   { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
+}
+@keyframes pageExitBwd {
+  from { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
+  to   { transform: perspective(900px) rotateY(26deg)  translateX(9%);  opacity: 0; }
+}
+@keyframes pageEnterBwd {
+  from { transform: perspective(900px) rotateY(-26deg) translateX(-9%); opacity: 0; }
+  to   { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
+}
+
+.page-exit-fwd  { animation: pageExitFwd  0.21s ease-in  both; }
+.page-exit-bwd  { animation: pageExitBwd  0.21s ease-in  both; }
+.page-enter-fwd { animation: pageEnterFwd 0.32s ease-out both; }
+.page-enter-bwd { animation: pageEnterBwd 0.32s ease-out both; }
 
 #canvas-right,
 #canvas-left {

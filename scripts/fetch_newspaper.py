@@ -25,7 +25,7 @@ from email.mime.text import MIMEText
 
 try:
     from PIL import Image
-    from pdf2image import convert_from_path
+    from pdf2image import convert_from_path, pdfinfo_from_path
 except ImportError as exc:
     print(f"Missing dependency: {exc}\nRun: pip install Pillow pdf2image")
     sys.exit(1)
@@ -206,45 +206,43 @@ def mark_email_processed(conn, uid):
     log.info("Email UID %s moved to %s", uid.decode(), PROCESSED_FOLDER)
 
 
-# ── PDF → Images ──────────────────────────────────────────────────────────────
+# ── PDF helpers ───────────────────────────────────────────────────────────────
 
 
-def convert_pdf(pdf_path, out_dir):
-    """Convert PDF to JPG pages. Returns list of output Paths."""
-    log.info("Converting PDF: %s", pdf_path)
+def count_pdf_pages(pdf_path):
+    """Return page count using poppler pdfinfo."""
+    try:
+        info = pdfinfo_from_path(str(pdf_path))
+        return int(info.get("Pages", 0))
+    except Exception as exc:
+        log.warning("pdfinfo failed (%s), falling back to full conversion", exc)
+        pages = convert_from_path(str(pdf_path), dpi=72, last_page=1, thread_count=1)
+        return len(pages)
+
+
+def create_thumbnail(pdf_path, out_dir):
+    """Render first PDF page → thumb.jpg."""
+    thumb = out_dir / "thumb.jpg"
     pages = convert_from_path(
-        pdf_path,
+        str(pdf_path),
         dpi=JPG_DPI,
         fmt="jpeg",
-        jpegopt={"quality": JPG_QUALITY, "progressive": True},
-        thread_count=2,
+        first_page=1,
+        last_page=1,
+        thread_count=1,
     )
-    log.info("PDF has %d pages", len(pages))
-    paths = []
-    for i, page in enumerate(pages, 1):
-        dest = out_dir / f"page-{i:03d}.jpg"
-        page.save(str(dest), "JPEG", quality=JPG_QUALITY, optimize=True)
-        paths.append(dest)
-        if i % 10 == 0:
-            log.info("  Converted %d/%d pages", i, len(pages))
-    return paths
-
-
-def create_thumbnail(page_paths, out_dir):
-    if not page_paths:
+    if not pages:
         return None
-    thumb = out_dir / "thumb.jpg"
-    with Image.open(page_paths[0]) as img:
-        new_h = int(img.height * THUMB_WIDTH / img.width)
-        resized = img.resize((THUMB_WIDTH, new_h), Image.LANCZOS)
-        resized.save(str(thumb), "JPEG", quality=80, optimize=True)
+    img = pages[0]
+    new_h = int(img.height * THUMB_WIDTH / img.width)
+    img = img.resize((THUMB_WIDTH, new_h), Image.LANCZOS)
+    img.save(str(thumb), "JPEG", quality=80, optimize=True)
     log.info("Thumbnail: %s", thumb)
     return thumb
 
 
-def dir_size_mb(directory):
-    total = sum(f.stat().st_size for f in Path(directory).rglob("*") if f.is_file())
-    return round(total / (1024 * 1024), 1)
+def file_size_mb(path):
+    return round(Path(path).stat().st_size / (1024 * 1024), 1)
 
 
 # ── Manifest ──────────────────────────────────────────────────────────────────
@@ -313,35 +311,35 @@ def process_email(uid, msg, manifest):
     issue_dir = STORAGE_BASE / str(year) / f"issue-{issue_num}"
     issue_dir.mkdir(parents=True, exist_ok=True)
 
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        tmp.write(pdf_bytes)
-        tmp_path = tmp.name
+    pdf_dest = issue_dir / "issue.pdf"
 
     try:
-        page_paths = convert_pdf(tmp_path, issue_dir)
-        create_thumbnail(page_paths, issue_dir)
-        size_mb = dir_size_mb(issue_dir)
+        pdf_dest.write_bytes(pdf_bytes)
+        log.info("PDF saved: %s", pdf_dest)
+
+        num_pages = count_pdf_pages(pdf_dest)
+        create_thumbnail(pdf_dest, issue_dir)
+        size_mb = file_size_mb(pdf_dest)
 
         entry = {
             "id": issue_id,
             "number": issue_num,
             "date": issue_date.isoformat(),
             "title": f"גיליון {issue_num}",
-            "pages": len(page_paths),
+            "pages": num_pages,
             "path": f"newspaper/{year}/issue-{issue_num}/",
             "thumb": f"newspaper/{year}/issue-{issue_num}/thumb.jpg",
+            "pdf":   f"newspaper/{year}/issue-{issue_num}/issue.pdf",
             "size_mb": size_mb,
         }
         manifest["issues"].insert(0, entry)  # newest first
         save_manifest(manifest)
-        log.info("Done: issue=%s pages=%d size=%sMB", issue_id, len(page_paths), size_mb)
+        log.info("Done: issue=%s pages=%d size=%sMB", issue_id, num_pages, size_mb)
         return True
 
     except Exception:
         shutil.rmtree(issue_dir, ignore_errors=True)
         raise
-    finally:
-        os.unlink(tmp_path)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

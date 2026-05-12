@@ -8,9 +8,9 @@
   window.NEWSPAPER_CONFIG = {
     manifestUrl: onVPS
       ? "/newspaper/manifest.json"
-      : "http://emanuel-sheli.israelcodes.ovh:8080/newspaper/manifest.json",
+      : "http://emanuel-sheli.israelcodes.ovh/newspaper/manifest.json",
 
-    storageBase: onVPS ? "" : "http://emanuel-sheli.israelcodes.ovh:8080",
+    storageBase: onVPS ? "" : "http://emanuel-sheli.israelcodes.ovh",
 
     preloadPages: 6,
     readAheadPages: 8,

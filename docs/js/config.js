@@ -1,17 +1,20 @@
 // ── Site configuration ────────────────────────────────────────────────────────
-// Edit these values to match your setup.
 
-window.NEWSPAPER_CONFIG = {
-  // Full URL to manifest.json on your VPS
-  manifestUrl: "https://israelcodes.ovh/newspaper/manifest.json",
+(function () {
+  // When served directly from the VPS (israelcodes.ovh:8080) use relative paths.
+  // When served from GitHub Pages use the full VPS URL.
+  const onVPS = window.location.hostname === "israelcodes.ovh";
 
-  // Base URL of your VPS (no trailing slash)
-  // Issue image paths from manifest.json are appended to this
-  storageBase: "https://israelcodes.ovh",
+  window.NEWSPAPER_CONFIG = {
+    manifestUrl: onVPS
+      ? "/newspaper/manifest.json"
+      : "http://israelcodes.ovh:8080/newspaper/manifest.json",
 
-  // Number of pages to preload at startup (first N pages of the open issue)
-  preloadPages: 6,
+    // storageBase is prepended to issue.path / issue.thumb from the manifest.
+    // Empty string = same origin (works when served from VPS directly).
+    storageBase: onVPS ? "" : "http://israelcodes.ovh:8080",
 
-  // Pages to load ahead/behind the current spread while reading
-  readAheadPages: 8,
-};
+    preloadPages: 6,
+    readAheadPages: 8,
+  };
+})();

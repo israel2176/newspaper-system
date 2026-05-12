@@ -649,33 +649,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transform-origin: center center;
-  will-change: transform, opacity;
 }
-
-/* ── Page-flip animations ─────────────────────────────────────────────────── */
-
-@keyframes pageExitFwd {
-  from { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
-  to   { transform: perspective(900px) rotateY(-26deg) translateX(-9%); opacity: 0; }
-}
-@keyframes pageEnterFwd {
-  from { transform: perspective(900px) rotateY(26deg)  translateX(9%);  opacity: 0; }
-  to   { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
-}
-@keyframes pageExitBwd {
-  from { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
-  to   { transform: perspective(900px) rotateY(26deg)  translateX(9%);  opacity: 0; }
-}
-@keyframes pageEnterBwd {
-  from { transform: perspective(900px) rotateY(-26deg) translateX(-9%); opacity: 0; }
-  to   { transform: perspective(900px) rotateY(0deg)   translateX(0);   opacity: 1; }
-}
-
-.page-exit-fwd  { animation: pageExitFwd  0.21s ease-in  both; }
-.page-exit-bwd  { animation: pageExitBwd  0.21s ease-in  both; }
-.page-enter-fwd { animation: pageEnterFwd 0.32s ease-out both; }
-.page-enter-bwd { animation: pageEnterBwd 0.32s ease-out both; }
 
 #canvas-right,
 #canvas-left {

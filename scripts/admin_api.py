@@ -21,9 +21,9 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("admin_api")
 
 UPLOAD_TOKEN  = os.getenv("UPLOAD_TOKEN", "")
-NEWSPAPER_DIR = Path(os.getenv("NEWSPAPER_DIR", "/var/www/newspaper"))
-FLATTEN_DPI   = int(os.getenv("FLATTEN_DPI", "150"))
-THUMB_WIDTH   = int(os.getenv("THUMB_WIDTH", "400"))
+NEWSPAPER_DIR = Path(os.getenv("STORAGE_PATH", "/var/www/newspaper"))
+FLATTEN_DPI   = int(os.getenv("JPG_DPI", "150"))
+THUMB_WIDTH   = int(os.getenv("THUMB_WIDTH", "300"))
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 

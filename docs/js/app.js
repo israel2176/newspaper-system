@@ -3,6 +3,7 @@
 
 window.App = (() => {
   let manifest = null;
+  let latestIssueNum = null;
 
   // ── Hebrew calendar date (Hebcal API) ────────────────────────────────────
 
@@ -34,15 +35,19 @@ window.App = (() => {
   // ── Masthead ───────────────────────────────────────────────────────────────
 
   function setMastheadToday() {
-    document.getElementById('mh-issue').textContent = '—';
+    const labelEl = document.getElementById('mh-issue-label');
+    if (labelEl) labelEl.textContent = latestIssueNum ? 'גיליון אחרון' : 'גיליון';
+    document.getElementById('mh-issue').textContent = latestIssueNum || '—';
     fetchHebrewDate(new Date())
       .then(s => { document.getElementById('mh-date').textContent = s; })
       .catch(() => { document.getElementById('mh-date').textContent = ''; });
   }
 
   function setMastheadIssue(issue) {
+    const labelEl = document.getElementById('mh-issue-label');
+    if (labelEl) labelEl.textContent = 'גיליון';
     const [y, m, d] = issue.date.split('-').map(Number);
-    document.getElementById('mh-issue').textContent = `No. ${issue.number}`;
+    document.getElementById('mh-issue').textContent = issue.number;
     fetchHebrewDate(new Date(y, m - 1, d))
       .then(s => { document.getElementById('mh-date').textContent = s; })
       .catch(() => { document.getElementById('mh-date').textContent = issue.date; });
@@ -151,7 +156,11 @@ window.App = (() => {
       applyManifestMeta(manifest);
 
       const issues = manifest.issues || [];
-      if (issues.length > 0) renderFeatured(issues[0]);
+      if (issues.length > 0) {
+        latestIssueNum = issues[0].number;
+        setMastheadToday();
+        renderFeatured(issues[0]);
+      }
       if (issues.length > 1) renderPrevIssues(issues.slice(1, 11)); // max 10 previous
 
       const targetNum = getIssueFromUrl();

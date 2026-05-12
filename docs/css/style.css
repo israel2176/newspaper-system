@@ -65,8 +65,10 @@ body {
 .masthead-center {
   flex: 1;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 0.3rem;
 }
 
 .masthead-logo {
@@ -74,6 +76,7 @@ body {
   width: auto;
   display: block;
   cursor: pointer;
+  border-radius: 12px;
   animation: logoEntrance 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
   filter: drop-shadow(0 2px 10px rgba(40,40,100,0.13));
   transition: filter 0.2s, transform 0.2s;
@@ -81,12 +84,12 @@ body {
 
 .masthead-logo:hover {
   filter: drop-shadow(0 4px 16px rgba(40,40,100,0.22));
-  transform: scale(1.02);
+  transform: scaleX(1.12) scale(1.02);
 }
 
 @keyframes logoEntrance {
-  from { opacity: 0; transform: scale(0.92) translateY(-10px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0); }
+  from { opacity: 0; transform: scaleX(1.12) scale(0.92) translateY(-10px); }
+  to   { opacity: 1; transform: scaleX(1.12) scale(1)    translateY(0); }
 }
 
 /* Screen-reader-only helper */
@@ -130,44 +133,30 @@ body {
   color: var(--ink);
 }
 
-/* ── Sub-nav ──────────────────────────────────────────────────────────────── */
+/* ── Masthead nav links ───────────────────────────────────────────────────── */
 
-#sub-nav {
-  background: var(--ink);
-  position: sticky;
-  top: 0;
-  z-index: 99;
-}
-
-.sub-nav-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 1rem;
+.masthead-nav {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 0;
-  height: 2rem;
 }
 
-.sub-nav-btn {
-  background: transparent;
-  border: none;
-  color: #c8bfa8;
+.masthead-nav-link {
   font-family: var(--font-sans);
-  font-size: 0.75rem;
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 0 0.45rem;
   letter-spacing: 0.05em;
-  cursor: pointer;
-  padding: 0 0.65rem;
-  height: 100%;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.15s;
 }
 
-.sub-nav-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.masthead-nav-link:hover,
+.masthead-nav-link.active { color: var(--red); }
 
-.sub-nav-sep {
-  color: #4a4540;
-  font-size: 0.75rem;
+.masthead-nav-sep {
+  color: #c0b8a8;
+  font-size: 0.6rem;
   user-select: none;
 }
 
@@ -216,8 +205,6 @@ body {
 }
 
 .static-back-btn:hover { color: var(--red); }
-
-.sub-nav-btn.active { color: #fff; }
 
 /* ── Loading view ─────────────────────────────────────────────────────────── */
 
@@ -613,5 +600,5 @@ body {
 /* ── Print ────────────────────────────────────────────────────────────────── */
 
 @media print {
-  #masthead, #sub-nav, #viewer-topbar, .nav-btn { display: none; }
+  #masthead, #viewer-topbar, .nav-btn { display: none; }
 }

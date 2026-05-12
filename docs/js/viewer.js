@@ -12,9 +12,6 @@ const Viewer = (() => {
   let currentIssue = null;
   let rendering    = false;
   let zoomScale    = 1;
-  let isPanning    = false;
-  let panStart     = { x: 0, y: 0 };
-  let panOffset    = { x: 0, y: 0 };
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
@@ -25,12 +22,14 @@ const Viewer = (() => {
     const page   = await pdfDoc.getPage(pageNum);
     const spread = document.getElementById('spread-container');
 
-    // Fill the full available area — nav buttons float on top so use full dimensions
-    const availW = spread.clientWidth  - 4;
-    const availH = spread.clientHeight - 4;
+    // Base scale to fit the page when not zoomed; multiply by zoomScale
+    const wrap   = document.getElementById('spread-wrap');
+    const availW = wrap.clientWidth  - 4;
+    const availH = wrap.clientHeight - 4;
 
-    const base  = page.getViewport({ scale: 1 });
-    const scale = Math.min(availW / base.width, availH / base.height);
+    const base      = page.getViewport({ scale: 1 });
+    const baseScale = Math.min(availW / base.width, availH / base.height);
+    const scale     = baseScale * zoomScale;
 
     const vp = page.getViewport({ scale });
     canvas.width  = Math.round(vp.width);
@@ -45,8 +44,8 @@ const Viewer = (() => {
     if (rendering) return;
     rendering = true;
 
-    // Second canvas not needed — each PDF page is already a full newspaper spread
     document.getElementById('canvas-left').style.display = 'none';
+    applyZoomState();
 
     try {
       await renderPage(pageNum);
@@ -62,7 +61,7 @@ const Viewer = (() => {
   function goNext() {
     if (currentPage < totalPages) {
       currentPage += 1;
-      resetZoom();
+      zoomScale = 1;
       renderSpread(currentPage);
     }
   }
@@ -70,7 +69,7 @@ const Viewer = (() => {
   function goPrev() {
     if (currentPage > 1) {
       currentPage -= 1;
-      resetZoom();
+      zoomScale = 1;
       renderSpread(currentPage);
     }
   }
@@ -91,80 +90,81 @@ const Viewer = (() => {
 
   // ── Zoom ───────────────────────────────────────────────────────────────────
 
-  function resetZoom() {
-    zoomScale = 1;
-    panOffset = { x: 0, y: 0 };
-    applyZoom();
-    document.getElementById('spread-container').style.cursor = 'zoom-in';
+  function applyZoomState() {
+    const wrap = document.getElementById('spread-wrap');
+    const container = document.getElementById('spread-container');
+    const canvas    = document.getElementById('canvas-right');
+    if (zoomScale > 1) {
+      wrap.style.overflow        = 'auto';
+      wrap.style.alignItems      = 'flex-start';
+      wrap.style.justifyContent  = 'flex-start';
+      container.style.width      = 'auto';
+      container.style.height     = 'auto';
+      container.style.minWidth   = '100%';
+      canvas.style.cursor        = 'zoom-out';
+    } else {
+      wrap.style.overflow        = 'hidden';
+      wrap.style.alignItems      = 'center';
+      wrap.style.justifyContent  = 'center';
+      container.style.width      = '100%';
+      container.style.height     = '100%';
+      container.style.minWidth   = '';
+      canvas.style.cursor        = 'zoom-in';
+    }
   }
 
-  function applyZoom() {
-    const c = document.getElementById('canvas-right');
-    c.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomScale})`;
-    c.style.transformOrigin = 'center center';
-    c.style.transition = isPanning ? 'none' : 'transform 0.2s ease';
+  function resetZoom() {
+    zoomScale = 1;
+    applyZoomState();
   }
 
   function setupZoom() {
-    const container = document.getElementById('spread-container');
-    container.style.cursor = 'zoom-in';
-    container.style.overflow = 'hidden';
+    const canvas = document.getElementById('canvas-right');
+    canvas.style.cursor = 'zoom-in';
 
-    // Click to zoom in/out
-    container.addEventListener('click', (e) => {
-      if (isPanning) return;
+    canvas.addEventListener('click', async (e) => {
+      const wrap = document.getElementById('spread-wrap');
       if (zoomScale === 1) {
-        // Zoom into click point
-        const rect   = container.getBoundingClientRect();
-        const cx     = e.clientX - rect.left - rect.width  / 2;
-        const cy     = e.clientY - rect.top  - rect.height / 2;
-        zoomScale    = 2.5;
-        panOffset    = { x: -cx * (zoomScale - 1) / zoomScale, y: -cy * (zoomScale - 1) / zoomScale };
-        container.style.cursor = 'zoom-out';
+        // Remember click position relative to canvas, then zoom
+        const rect   = canvas.getBoundingClientRect();
+        const ratioX = (e.clientX - rect.left) / rect.width;
+        const ratioY = (e.clientY - rect.top)  / rect.height;
+        zoomScale = 2.5;
+        applyZoomState();
+        await renderPage(currentPage);
+        // Scroll so the clicked area stays visible
+        const newRect = canvas.getBoundingClientRect();
+        wrap.scrollLeft = ratioX * canvas.clientWidth  - wrap.clientWidth  / 2;
+        wrap.scrollTop  = ratioY * canvas.clientHeight - wrap.clientHeight / 2;
       } else {
         zoomScale = 1;
-        panOffset = { x: 0, y: 0 };
-        container.style.cursor = 'zoom-in';
+        applyZoomState();
+        await renderPage(currentPage);
       }
-      applyZoom();
-    });
-
-    // Drag to pan when zoomed
-    container.addEventListener('mousedown', (e) => {
-      if (zoomScale === 1) return;
-      isPanning = true;
-      panStart  = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
-      container.style.cursor = 'grabbing';
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!isPanning) return;
-      panOffset = { x: e.clientX - panStart.x, y: e.clientY - panStart.y };
-      applyZoom();
-    });
-    window.addEventListener('mouseup', () => {
-      if (!isPanning) return;
-      isPanning = false;
-      document.getElementById('spread-container').style.cursor = zoomScale > 1 ? 'zoom-out' : 'zoom-in';
     });
 
     // Pinch-to-zoom on touch
     let lastDist = 0;
-    container.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) lastDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2)
+        lastDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
     }, { passive: true });
-    container.addEventListener('touchmove', (e) => {
+    canvas.addEventListener('touchmove', async (e) => {
       if (e.touches.length !== 2) return;
       const dist = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
       );
-      zoomScale = Math.max(1, Math.min(4, zoomScale * (dist / lastDist)));
-      lastDist  = dist;
-      if (zoomScale === 1) panOffset = { x: 0, y: 0 };
-      applyZoom();
+      const newZoom = Math.max(1, Math.min(4, zoomScale * (dist / lastDist)));
+      lastDist = dist;
+      if (Math.abs(newZoom - zoomScale) > 0.05) {
+        zoomScale = newZoom;
+        applyZoomState();
+        await renderPage(currentPage);
+      }
     }, { passive: true });
   }
 

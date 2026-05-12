@@ -58,35 +58,16 @@ window.App = (() => {
 
   // ── Featured (home) view ───────────────────────────────────────────────────
 
-  const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני',
-                     'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-
   function renderFeatured(issue) {
-    const [y, m, d] = issue.date.split('-').map(Number);
-    const gregDate  = `${d} ${MONTHS_HE[m - 1]} ${y}`;
-    const thumbUrl  = `${NEWSPAPER_CONFIG.storageBase}/${issue.thumb}`;
-
-    document.getElementById('featured-container').innerHTML = `
-      <div class="featured-card" id="featured-card">
-        <div class="featured-thumb-wrap">
-          <img class="featured-thumb" src="${thumbUrl}" alt="גיליון ${issue.number}" id="featured-thumb-img">
-        </div>
-        <div class="featured-info">
-          <div class="featured-label">הגיליון האחרון</div>
-          <div class="featured-number">No. ${issue.number}</div>
-          <div class="featured-date">${gregDate}</div>
-          <div class="featured-pages">${issue.pages} עמודים</div>
-          <button class="featured-read-btn" id="featured-read-btn">קרא עכשיו</button>
-        </div>
-      </div>
-    `;
-
-    // Click on the card (thumb or anywhere) opens the issue
-    document.getElementById('featured-card').addEventListener('click', () => openIssue(issue));
-    document.getElementById('featured-read-btn').addEventListener('click', e => {
-      e.stopPropagation(); // card click already handles it
-      openIssue(issue);
-    });
+    const thumbUrl = `${NEWSPAPER_CONFIG.storageBase}/${issue.thumb}`;
+    const img = document.createElement('img');
+    img.src       = thumbUrl;
+    img.alt       = `גיליון ${issue.number}`;
+    img.className = 'featured-thumb';
+    img.addEventListener('click', () => openIssue(issue));
+    const container = document.getElementById('featured-container');
+    container.innerHTML = '';
+    container.appendChild(img);
   }
 
   function renderPrevIssues(issues) {

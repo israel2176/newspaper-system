@@ -7,7 +7,7 @@ window.App = (() => {
 
   // ── Hebrew calendar date (Intl API) ───────────────────────────────────────
 
-  const hebrewFmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+  const hebrewFmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew-nu-hebr', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

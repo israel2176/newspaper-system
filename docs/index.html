@@ -10,7 +10,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-  <!-- PDF.js (Mozilla, Apache 2.0) — renders PDF pages directly in the browser -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -40,6 +39,23 @@
     </div>
   </header>
 
+  <!-- ── Sub-nav ───────────────────────────────────────────────────────────── -->
+  <nav id="sub-nav">
+    <div class="sub-nav-inner">
+      <button class="sub-nav-btn" id="btn-about">אודות</button>
+      <span class="sub-nav-sep" aria-hidden="true">|</span>
+      <button class="sub-nav-btn" id="btn-contact">צור קשר</button>
+    </div>
+  </nav>
+
+  <!-- ── Modal overlay ─────────────────────────────────────────────────────── -->
+  <div id="modal-overlay" class="hidden" role="dialog" aria-modal="true">
+    <div id="modal-box">
+      <button id="modal-close" aria-label="סגור">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
   <!-- ── Loading view ──────────────────────────────────────────────────────── -->
   <div id="loading-view" class="view" aria-live="polite">
     <div class="spinner" aria-hidden="true">
@@ -50,19 +66,22 @@
 
   <!-- ── Home view ─────────────────────────────────────────────────────────── -->
   <div id="home-view" class="view hidden">
-    <div id="featured-container"></div>
-    <div class="home-archive-btn-wrap">
-      <button id="btn-to-archive" class="archive-link-btn">ארכיון גיליונות ישנים ←</button>
-    </div>
-  </div>
+    <div class="home-inner">
 
-  <!-- ── Archive view ──────────────────────────────────────────────────────── -->
-  <div id="archive-view" class="view hidden" aria-label="ארכיון גיליונות">
-    <div class="archive-topbar">
-      <button id="btn-archive-back" class="back-link-btn">← חזרה לגיליון האחרון</button>
-      <h2 class="archive-heading">ארכיון גיליונות</h2>
+      <!-- Featured latest issue -->
+      <div id="featured-container"></div>
+
+      <!-- Previous issues (all but the latest) -->
+      <section id="prev-section" class="hidden">
+        <div class="section-divider">
+          <div class="section-rule"></div>
+          <h2 class="section-heading">גיליונות קודמים</h2>
+          <div class="section-rule"></div>
+        </div>
+        <div id="prev-container"></div>
+      </section>
+
     </div>
-    <div id="archive-container"></div>
   </div>
 
   <!-- ── Viewer view ───────────────────────────────────────────────────────── -->
@@ -77,7 +96,6 @@
     </div>
 
     <div id="spread-wrap">
-      <!-- RTL: left button = go forward (deeper into newspaper) -->
       <button id="btn-nav-left"  class="nav-btn nav-btn-left"  aria-label="הדף הבא">❮</button>
 
       <div id="spread-container">

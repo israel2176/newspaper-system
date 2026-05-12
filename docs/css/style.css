@@ -27,6 +27,8 @@ body {
   color: var(--ink);
   min-height: 100dvh;
   direction: rtl;
+  display: flex;
+  flex-direction: column;
 
   /* Subtle newsprint dot texture */
   background-image: radial-gradient(circle, #c8bfa8 1px, transparent 1px);
@@ -249,7 +251,9 @@ body {
 /* ── Static pages (about / contact) ──────────────────────────────────────── */
 
 .static-page {
+  flex: 1;
   max-width: 640px;
+  width: 100%;
   margin: 3rem auto;
   padding: 0 1.5rem 4rem;
 }

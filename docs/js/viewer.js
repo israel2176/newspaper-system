@@ -21,8 +21,8 @@ const Viewer = (() => {
     const page   = await pdfDoc.getPage(pageNum);
     const spread = document.getElementById('spread-container');
 
-    // Fill the full available area — each PDF page is already a full spread
-    const availW = spread.clientWidth  - 16;
+    // Fill the full available area — nav buttons float on top so use full dimensions
+    const availW = spread.clientWidth  - 4;
     const availH = spread.clientHeight - 4;
 
     const base  = page.getViewport({ scale: 1 });

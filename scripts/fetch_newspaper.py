@@ -25,7 +25,7 @@ from email.mime.text import MIMEText
 
 try:
     from PIL import Image
-    from pdf2image import convert_from_path, pdfinfo_from_path
+    from pdf2image import convert_from_path
 except ImportError as exc:
     print(f"Missing dependency: {exc}\nRun: pip install Pillow pdf2image")
     sys.exit(1)
@@ -55,8 +55,8 @@ STORAGE_BASE      = Path(_env("STORAGE_PATH",  "/var/www/israelcodes.ovh/newspap
 MANIFEST_FILE     = Path(_env("MANIFEST_PATH", str(STORAGE_BASE / "manifest.json")))
 NOTIFY_EMAIL      = _env("NOTIFY_EMAIL")
 PROCESSED_FOLDER  = _env("PROCESSED_FOLDER",  "newspaper-processed")
-JPG_DPI           = int(_env("JPG_DPI",        "150"))
-JPG_QUALITY       = int(_env("JPG_QUALITY",    "85"))
+FLATTEN_DPI       = int(_env("FLATTEN_DPI",    "200"))   # DPI for rasterizing (higher = sharper, bigger file)
+JPG_QUALITY       = int(_env("JPG_QUALITY",    "88"))
 THUMB_WIDTH       = int(_env("THUMB_WIDTH",    "300"))
 
 logging.basicConfig(
@@ -209,36 +209,52 @@ def mark_email_processed(conn, uid):
 # ── PDF helpers ───────────────────────────────────────────────────────────────
 
 
-def count_pdf_pages(pdf_path):
-    """Return page count using poppler pdfinfo."""
+def rasterize_pdf(pdf_bytes, issue_dir):
+    """
+    Convert PDF → raster images → image-based PDF.
+    This bakes all fonts into pixels so PDF.js renders correctly regardless
+    of the original font embedding. Returns page count.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        tmp.write(pdf_bytes)
+        tmp_path = Path(tmp.name)
+
     try:
-        info = pdfinfo_from_path(str(pdf_path))
-        return int(info.get("Pages", 0))
-    except Exception as exc:
-        log.warning("pdfinfo failed (%s), falling back to full conversion", exc)
-        pages = convert_from_path(str(pdf_path), dpi=72, last_page=1, thread_count=1)
-        return len(pages)
+        log.info("Rasterizing PDF at %d DPI …", FLATTEN_DPI)
+        pages = convert_from_path(
+            str(tmp_path),
+            dpi=FLATTEN_DPI,
+            fmt="jpeg",
+            thread_count=2,
+        )
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
-
-def create_thumbnail(pdf_path, out_dir):
-    """Render first PDF page → thumb.jpg."""
-    thumb = out_dir / "thumb.jpg"
-    pages = convert_from_path(
-        str(pdf_path),
-        dpi=JPG_DPI,
-        fmt="jpeg",
-        first_page=1,
-        last_page=1,
-        thread_count=1,
-    )
     if not pages:
-        return None
-    img = pages[0]
+        raise ValueError("PDF produced no pages")
+
+    log.info("  %d pages rendered", len(pages))
+
+    # Save as image-based PDF (no fonts = no font issues)
+    pdf_dest = issue_dir / "issue.pdf"
+    pages[0].save(
+        str(pdf_dest), "PDF",
+        save_all=True,
+        append_images=pages[1:],
+        resolution=FLATTEN_DPI,
+    )
+    log.info("Rasterized PDF saved: %s", pdf_dest)
+
+    # Thumbnail from the first page (already in memory — no extra conversion)
+    thumb = issue_dir / "thumb.jpg"
+    img = pages[0].copy()
     new_h = int(img.height * THUMB_WIDTH / img.width)
-    img = img.resize((THUMB_WIDTH, new_h), Image.LANCZOS)
-    img.save(str(thumb), "JPEG", quality=80, optimize=True)
+    img.resize((THUMB_WIDTH, new_h), Image.LANCZOS).save(
+        str(thumb), "JPEG", quality=82, optimize=True
+    )
     log.info("Thumbnail: %s", thumb)
-    return thumb
+
+    return len(pages)
 
 
 def file_size_mb(path):
@@ -311,26 +327,20 @@ def process_email(uid, msg, manifest):
     issue_dir = STORAGE_BASE / str(year) / f"issue-{issue_num}"
     issue_dir.mkdir(parents=True, exist_ok=True)
 
-    pdf_dest = issue_dir / "issue.pdf"
-
     try:
-        pdf_dest.write_bytes(pdf_bytes)
-        log.info("PDF saved: %s", pdf_dest)
-
-        num_pages = count_pdf_pages(pdf_dest)
-        create_thumbnail(pdf_dest, issue_dir)
-        size_mb = file_size_mb(pdf_dest)
+        num_pages = rasterize_pdf(pdf_bytes, issue_dir)
+        size_mb   = file_size_mb(issue_dir / "issue.pdf")
 
         entry = {
-            "id": issue_id,
-            "number": issue_num,
-            "date": issue_date.isoformat(),
-            "title": f"גיליון {issue_num}",
-            "pages": num_pages,
-            "path": f"newspaper/{year}/issue-{issue_num}/",
-            "thumb": f"newspaper/{year}/issue-{issue_num}/thumb.jpg",
-            "pdf":   f"newspaper/{year}/issue-{issue_num}/issue.pdf",
-            "size_mb": size_mb,
+            "id":       issue_id,
+            "number":   issue_num,
+            "date":     issue_date.isoformat(),
+            "title":    f"גיליון {issue_num}",
+            "pages":    num_pages,
+            "path":     f"newspaper/{year}/issue-{issue_num}/",
+            "thumb":    f"newspaper/{year}/issue-{issue_num}/thumb.jpg",
+            "pdf":      f"newspaper/{year}/issue-{issue_num}/issue.pdf",
+            "size_mb":  size_mb,
         }
         manifest["issues"].insert(0, entry)  # newest first
         save_manifest(manifest)

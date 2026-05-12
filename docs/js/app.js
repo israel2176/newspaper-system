@@ -5,23 +5,15 @@ window.App = (() => {
   let manifest = null;
   let _previousView = 'home';
 
-  // ── Hebrew calendar date (Intl API) ───────────────────────────────────────
+  // ── Hebrew calendar date (Hebcal API) ────────────────────────────────────
 
-  const hebrewFmt = new Intl.DateTimeFormat('he-IL-u-ca-hebrew-nu-hebr', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-
-  function hebrewDate(date) {
-    try {
-      const parts = hebrewFmt.formatToParts(date);
-      const get   = t => (parts.find(p => p.type === t) || {}).value || '';
-      const norm  = s => s.replace(/״/g, '"').replace(/^ב/, '');
-      return `${norm(get('day'))} ${norm(get('month'))} ${norm(get('year'))}`;
-    } catch (_) {
-      return date.toLocaleDateString('he-IL');
-    }
+  async function fetchHebrewDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const res  = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${y}-${m}-${d}&g2h=1`);
+    const data = await res.json();
+    return (data.hebrew || '').replace(/״/g, '"');
   }
 
   // ── View switching ─────────────────────────────────────────────────────────
@@ -43,14 +35,18 @@ window.App = (() => {
   // ── Masthead ───────────────────────────────────────────────────────────────
 
   function setMastheadToday() {
-    document.getElementById('mh-date').textContent = hebrewDate(new Date());
     document.getElementById('mh-issue').textContent = '—';
+    fetchHebrewDate(new Date())
+      .then(s => { document.getElementById('mh-date').textContent = s; })
+      .catch(() => { document.getElementById('mh-date').textContent = ''; });
   }
 
   function setMastheadIssue(issue) {
     const [y, m, d] = issue.date.split('-').map(Number);
-    document.getElementById('mh-date').textContent = hebrewDate(new Date(y, m - 1, d));
     document.getElementById('mh-issue').textContent = `No. ${issue.number}`;
+    fetchHebrewDate(new Date(y, m - 1, d))
+      .then(s => { document.getElementById('mh-date').textContent = s; })
+      .catch(() => { document.getElementById('mh-date').textContent = issue.date; });
   }
 
   function applyManifestMeta(m) {

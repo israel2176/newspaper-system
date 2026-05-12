@@ -45,12 +45,13 @@ body {
 /* ── Masthead ─────────────────────────────────────────────────────────────── */
 
 #masthead {
-  background-color: var(--paper);
-  border-bottom: 3px double var(--border);
+  background: #fff;
+  border-bottom: 2px solid #d4cfc8;
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0.75rem 1rem 0.5rem;
+  padding: 0.4rem 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
 }
 
 .masthead-inner {
@@ -63,54 +64,59 @@ body {
 
 .masthead-center {
   flex: 1;
-  text-align: center;
-}
-
-.masthead-title {
-  font-family: var(--font-serif);
-  font-weight: 900;
-  font-size: clamp(2rem, 6vw, 3.5rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.masthead-title:hover { color: var(--red); }
-
-.masthead-rules {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin: 0.35rem 0 0.25rem;
+  justify-content: center;
+  align-items: center;
 }
 
-.masthead-rule { background: var(--border); }
-.masthead-rule.thick { height: 3px; }
-.masthead-rule.thin  { height: 1px; }
+.masthead-logo {
+  height: clamp(48px, 9vw, 100px);
+  width: auto;
+  display: block;
+  cursor: pointer;
+  animation: logoEntrance 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  filter: drop-shadow(0 2px 10px rgba(40,40,100,0.13));
+  transition: filter 0.2s, transform 0.2s;
+}
 
-.masthead-tagline {
-  font-family: var(--font-serif);
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-  font-style: italic;
-  letter-spacing: 0.05em;
-  min-height: 1em;
+.masthead-logo:hover {
+  filter: drop-shadow(0 4px 16px rgba(40,40,100,0.22));
+  transform: scale(1.02);
+}
+
+@keyframes logoEntrance {
+  from { opacity: 0; transform: scale(0.92) translateY(-10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* Screen-reader-only helper */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
 }
 
 .masthead-side {
-  min-width: 90px;
+  min-width: 80px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  animation: fadeInMeta 0.5s 0.35s ease both;
+}
+
+@keyframes fadeInMeta {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .masthead-right { align-items: flex-end; text-align: right; }
 .masthead-left  { align-items: flex-start; text-align: left; }
 
 .masthead-label {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--ink-soft);
@@ -119,7 +125,7 @@ body {
 
 .masthead-value {
   font-family: var(--font-serif);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--ink);
 }

@@ -49,11 +49,7 @@ window.App = (() => {
   }
 
   function applyManifestMeta(m) {
-    const name = m.newspaper_name || 'עמנואל שלי';
-    document.getElementById('mh-name').textContent = name;
-    document.title = name;
-    const tagEl = document.getElementById('mh-tagline');
-    if (tagEl) tagEl.textContent = m.tagline || '';
+    document.title = m.newspaper_name || 'עמנואל שלי';
   }
 
   // ── Featured (home) view ───────────────────────────────────────────────────
@@ -139,8 +135,7 @@ window.App = (() => {
     showLoading('טוען...');
     setMastheadToday();
 
-    document.getElementById('mh-name').style.cursor = 'pointer';
-    document.getElementById('mh-name').addEventListener('click', showHome);
+    document.getElementById('mh-logo').addEventListener('click', showHome);
     document.getElementById('btn-back').addEventListener('click', showHome);
 
     window.addEventListener('popstate', (e) => {

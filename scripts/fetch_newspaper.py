@@ -210,52 +210,55 @@ def mark_email_processed(conn, uid):
 # ── PDF helpers ───────────────────────────────────────────────────────────────
 
 
-def rasterize_pdf(pdf_bytes, issue_dir):
+def save_pdf_and_thumb(pdf_bytes, issue_dir):
     """
-    Convert PDF → raster images → image-based PDF.
-    This bakes all fonts into pixels so PDF.js renders correctly regardless
-    of the original font embedding. Returns page count.
+    Save the original PDF (vector quality for PDF.js) and generate a thumbnail
+    by rasterizing only the first page. Returns page count.
     """
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         tmp.write(pdf_bytes)
         tmp_path = Path(tmp.name)
 
     try:
-        log.info("Rasterizing PDF at %d DPI …", FLATTEN_DPI)
+        # Count pages and render first page for thumbnail
+        log.info("Rendering first page for thumbnail at %d DPI …", FLATTEN_DPI)
         pages = convert_from_path(
             str(tmp_path),
             dpi=FLATTEN_DPI,
             fmt="jpeg",
-            thread_count=2,
+            first_page=1,
+            last_page=1,
+            thread_count=1,
         )
+        if not pages:
+            raise ValueError("PDF produced no pages")
+
+        # Get total page count via pdfinfo (fast)
+        try:
+            from pdf2image import pdfinfo_from_path
+            total = int(pdfinfo_from_path(str(tmp_path)).get("Pages", len(pages)))
+        except Exception:
+            total = len(pages)
+
+        log.info("PDF has %d pages", total)
+
     finally:
+        # Save original PDF (vector quality) — PDF.js renders it at any zoom
+        pdf_dest = issue_dir / "issue.pdf"
+        pdf_dest.write_bytes(pdf_bytes)
+        log.info("Original PDF saved: %s", pdf_dest)
         tmp_path.unlink(missing_ok=True)
 
-    if not pages:
-        raise ValueError("PDF produced no pages")
-
-    log.info("  %d pages rendered", len(pages))
-
-    # Save as image-based PDF (no fonts = no font issues)
-    pdf_dest = issue_dir / "issue.pdf"
-    pages[0].save(
-        str(pdf_dest), "PDF",
-        save_all=True,
-        append_images=pages[1:],
-        resolution=FLATTEN_DPI,
-    )
-    log.info("Rasterized PDF saved: %s", pdf_dest)
-
-    # Thumbnail from the first page (already in memory — no extra conversion)
+    # Thumbnail from first page render
     thumb = issue_dir / "thumb.jpg"
-    img = pages[0].copy()
+    img   = pages[0].copy()
     new_h = int(img.height * THUMB_WIDTH / img.width)
     img.resize((THUMB_WIDTH, new_h), Image.LANCZOS).save(
         str(thumb), "JPEG", quality=82, optimize=True
     )
     log.info("Thumbnail: %s", thumb)
 
-    return len(pages)
+    return total
 
 
 def file_size_mb(path):
@@ -345,7 +348,7 @@ def process_email(uid, msg, manifest):
     issue_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        num_pages = rasterize_pdf(pdf_bytes, issue_dir)
+        num_pages = save_pdf_and_thumb(pdf_bytes, issue_dir)
         size_mb   = file_size_mb(issue_dir / "issue.pdf")
 
         entry = {

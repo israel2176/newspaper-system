@@ -11,6 +11,10 @@ const Viewer = (() => {
   let currentPage  = 1;
   let currentIssue = null;
   let rendering    = false;
+  let zoomScale    = 1;
+  let isPanning    = false;
+  let panStart     = { x: 0, y: 0 };
+  let panOffset    = { x: 0, y: 0 };
 
   // ── Rendering ──────────────────────────────────────────────────────────────
 
@@ -56,17 +60,17 @@ const Viewer = (() => {
   // ── Navigation ─────────────────────────────────────────────────────────────
 
   function goNext() {
-    // ❯ right button = advance forward (higher page numbers)
     if (currentPage < totalPages) {
       currentPage += 1;
+      resetZoom();
       renderSpread(currentPage);
     }
   }
 
   function goPrev() {
-    // ❮ left button = go back (lower page numbers)
     if (currentPage > 1) {
       currentPage -= 1;
+      resetZoom();
       renderSpread(currentPage);
     }
   }
@@ -83,6 +87,85 @@ const Viewer = (() => {
     const btnRight = document.getElementById('btn-nav-right');  // ❯ = prev page (back)
     if (btnLeft)  btnLeft.disabled  = currentPage >= totalPages;
     if (btnRight) btnRight.disabled = currentPage <= 1;
+  }
+
+  // ── Zoom ───────────────────────────────────────────────────────────────────
+
+  function resetZoom() {
+    zoomScale = 1;
+    panOffset = { x: 0, y: 0 };
+    applyZoom();
+    document.getElementById('spread-container').style.cursor = 'zoom-in';
+  }
+
+  function applyZoom() {
+    const c = document.getElementById('canvas-right');
+    c.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomScale})`;
+    c.style.transformOrigin = 'center center';
+    c.style.transition = isPanning ? 'none' : 'transform 0.2s ease';
+  }
+
+  function setupZoom() {
+    const container = document.getElementById('spread-container');
+    container.style.cursor = 'zoom-in';
+    container.style.overflow = 'hidden';
+
+    // Click to zoom in/out
+    container.addEventListener('click', (e) => {
+      if (isPanning) return;
+      if (zoomScale === 1) {
+        // Zoom into click point
+        const rect   = container.getBoundingClientRect();
+        const cx     = e.clientX - rect.left - rect.width  / 2;
+        const cy     = e.clientY - rect.top  - rect.height / 2;
+        zoomScale    = 2.5;
+        panOffset    = { x: -cx * (zoomScale - 1) / zoomScale, y: -cy * (zoomScale - 1) / zoomScale };
+        container.style.cursor = 'zoom-out';
+      } else {
+        zoomScale = 1;
+        panOffset = { x: 0, y: 0 };
+        container.style.cursor = 'zoom-in';
+      }
+      applyZoom();
+    });
+
+    // Drag to pan when zoomed
+    container.addEventListener('mousedown', (e) => {
+      if (zoomScale === 1) return;
+      isPanning = true;
+      panStart  = { x: e.clientX - panOffset.x, y: e.clientY - panOffset.y };
+      container.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      panOffset = { x: e.clientX - panStart.x, y: e.clientY - panStart.y };
+      applyZoom();
+    });
+    window.addEventListener('mouseup', () => {
+      if (!isPanning) return;
+      isPanning = false;
+      document.getElementById('spread-container').style.cursor = zoomScale > 1 ? 'zoom-out' : 'zoom-in';
+    });
+
+    // Pinch-to-zoom on touch
+    let lastDist = 0;
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }, { passive: true });
+    container.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 2) return;
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      zoomScale = Math.max(1, Math.min(4, zoomScale * (dist / lastDist)));
+      lastDist  = dist;
+      if (zoomScale === 1) panOffset = { x: 0, y: 0 };
+      applyZoom();
+    }, { passive: true });
   }
 
   // ── Open / Close ───────────────────────────────────────────────────────────
@@ -102,6 +185,7 @@ const Viewer = (() => {
       pdfDoc     = await PDFJS.getDocument({ url: pdfUrl }).promise;
       totalPages = pdfDoc.numPages;
       window.App._showViewInternal('viewer');
+      setupZoom();
       await renderSpread(1);
     } catch (err) {
       console.error('PDF load error:', err);

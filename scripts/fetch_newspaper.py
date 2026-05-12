@@ -55,9 +55,10 @@ STORAGE_BASE      = Path(_env("STORAGE_PATH",  "/var/www/israelcodes.ovh/newspap
 MANIFEST_FILE     = Path(_env("MANIFEST_PATH", str(STORAGE_BASE / "manifest.json")))
 NOTIFY_EMAIL      = _env("NOTIFY_EMAIL")
 PROCESSED_FOLDER  = _env("PROCESSED_FOLDER",  "newspaper-processed")
-FLATTEN_DPI       = int(_env("FLATTEN_DPI",    "200"))   # DPI for rasterizing (higher = sharper, bigger file)
+FLATTEN_DPI       = int(_env("FLATTEN_DPI",    "200"))
 JPG_QUALITY       = int(_env("JPG_QUALITY",    "88"))
 THUMB_WIDTH       = int(_env("THUMB_WIDTH",    "300"))
+MAX_ISSUES        = int(_env("MAX_ISSUES",     "11"))    # 1 featured + 10 previous
 
 logging.basicConfig(
     level=logging.INFO,
@@ -261,6 +262,22 @@ def file_size_mb(path):
     return round(Path(path).stat().st_size / (1024 * 1024), 1)
 
 
+def trim_old_issues(manifest):
+    """Delete oldest issues beyond MAX_ISSUES, save manifest if anything pruned."""
+    pruned = 0
+    while len(manifest["issues"]) > MAX_ISSUES:
+        old     = manifest["issues"].pop()   # oldest is last (newest-first list)
+        year    = old["date"][:4]
+        old_dir = STORAGE_BASE / year / f"issue-{old['number']}"
+        if old_dir.exists():
+            shutil.rmtree(str(old_dir), ignore_errors=True)
+            log.info("Pruned old issue %s (%s)", old["id"], old_dir)
+        pruned += 1
+    if pruned:
+        save_manifest(manifest)
+        log.info("Pruned %d old issue(s), %d remaining", pruned, len(manifest["issues"]))
+
+
 # ── Manifest ──────────────────────────────────────────────────────────────────
 
 
@@ -344,6 +361,7 @@ def process_email(uid, msg, manifest):
         }
         manifest["issues"].insert(0, entry)  # newest first
         save_manifest(manifest)
+        trim_old_issues(manifest)
         log.info("Done: issue=%s pages=%d size=%sMB", issue_id, num_pages, size_mb)
         return True
 

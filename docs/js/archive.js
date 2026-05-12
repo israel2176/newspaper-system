@@ -50,30 +50,17 @@ const Archive = (() => {
     return card;
   }
 
-  // Render issues grouped by year into a container element
+  // Render issues as a flat grid (no year grouping)
   function renderInto(issues, container) {
     container.innerHTML = '';
     if (!issues || issues.length === 0) {
       container.innerHTML = '<p class="empty-msg">אין גיליונות נוספים</p>';
       return;
     }
-
-    const byYear = groupByYear(issues);
-    for (const [year, yearIssues] of byYear) {
-      const section = document.createElement('section');
-      section.className = 'year-section';
-
-      const heading = document.createElement('h3');
-      heading.className = 'year-heading';
-      heading.innerHTML = `${year} <span class="year-count">${yearIssues.length} גיליונות</span>`;
-      section.appendChild(heading);
-
-      const grid = document.createElement('div');
-      grid.className = 'issues-grid';
-      for (const issue of yearIssues) grid.appendChild(buildCard(issue));
-      section.appendChild(grid);
-      container.appendChild(section);
-    }
+    const grid = document.createElement('div');
+    grid.className = 'issues-grid';
+    for (const issue of issues) grid.appendChild(buildCard(issue));
+    container.appendChild(grid);
   }
 
   return { renderInto };

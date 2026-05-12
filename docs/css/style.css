@@ -468,6 +468,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  direction: ltr;   /* keep back-btn on the left, fullscreen on the right */
   padding: 0.5rem 1rem;
   background: rgba(26, 22, 18, 0.92);
   backdrop-filter: blur(4px);

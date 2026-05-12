@@ -143,6 +143,11 @@ window.App = (() => {
     document.getElementById('mh-logo').addEventListener('click', showHome);
     document.getElementById('btn-back').addEventListener('click', showHome);
 
+    const _masthead = document.getElementById('masthead');
+    window.addEventListener('scroll', () => {
+      _masthead.classList.toggle('masthead--scrolled', window.scrollY > 40);
+    }, { passive: true });
+
     window.addEventListener('popstate', (e) => {
       if (e.state?.issue && manifest) {
         const found = manifest.issues.find(i => i.number === e.state.issue);

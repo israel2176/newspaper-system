@@ -469,7 +469,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1rem;
-  background: rgba(26, 22, 18, 0.9);
+  background: rgba(26, 22, 18, 0.92);
   backdrop-filter: blur(4px);
   border-bottom: 1px solid #3a3330;
   flex-shrink: 0;
@@ -490,21 +490,11 @@ body {
   white-space: nowrap;
 }
 
-.viewer-btn:hover {
-  background: #3a3330;
-  color: #fff;
-}
+.viewer-btn:hover { background: #3a3330; color: #fff; }
 
-.viewer-btn-group {
-  display: flex;
-  gap: 0.5rem;
-}
+.viewer-btn-group { display: flex; gap: 0.5rem; }
 
-.icon-btn {
-  padding: 0.3rem 0.5rem;
-  font-size: 1rem;
-  line-height: 1;
-}
+.icon-btn { padding: 0.3rem 0.5rem; font-size: 1rem; line-height: 1; }
 
 .page-indicator {
   font-family: var(--font-serif);
@@ -515,29 +505,46 @@ body {
   white-space: nowrap;
 }
 
-#flipbook-wrap {
+/* ── PDF Spread layout ────────────────────────────────────────────────────── */
+
+#spread-wrap {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   overflow: hidden;
-  padding: 1rem 3.5rem;
+  padding: 0.75rem 0;
+  gap: 0;
 }
 
-#flipbook-container {
-  /* StPageFlip renders inside here */
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+#spread-container {
+  display: flex;
+  flex-direction: row;   /* canvas-right first (RTL: right page = higher in reading) */
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  max-height: 100%;
 }
 
-/* Page flip navigation arrows */
-.flip-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 20;
-  background: rgba(20, 16, 12, 0.5);
+#canvas-right,
+#canvas-left {
+  display: block;
+  max-height: 100%;
+  width: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  background: #fff;
+}
+
+/* Vertical divider between pages */
+#canvas-right { border-left: 1px solid #555; }
+#canvas-left  { border-right: 1px solid #555; }
+
+/* ── Navigation buttons ───────────────────────────────────────────────────── */
+
+.nav-btn {
+  flex-shrink: 0;
+  background: rgba(20, 16, 12, 0.45);
   border: 1px solid #5a5550;
   color: #d4cfc8;
   width: 2.5rem;
@@ -549,17 +556,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
-.flip-nav:hover { background: rgba(40, 32, 24, 0.9); opacity: 1; }
-.flip-nav:disabled { opacity: 0.15; cursor: default; }
+.nav-btn:hover   { background: rgba(40, 32, 24, 0.9); opacity: 1; }
+.nav-btn:disabled { opacity: 0.15; cursor: default; }
 
-/* RTL newspaper: prev is on left side, next is on right side */
-.flip-nav-prev { left: 0.5rem; }
-.flip-nav-next { right: 0.5rem; }
-
-/* ── Fullscreen mode ──────────────────────────────────────────────────────── */
+/* ── Fullscreen ───────────────────────────────────────────────────────────── */
 
 #viewer-view:fullscreen,
 #viewer-view:-webkit-full-screen {

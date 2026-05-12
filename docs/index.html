@@ -10,7 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+  <!-- PDF.js (Mozilla, Apache 2.0) — renders PDF pages directly in the browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -47,7 +48,7 @@
     <p id="loading-text" class="loading-label">טוען...</p>
   </div>
 
-  <!-- ── Home view (גיליון אחרון) ─────────────────────────────────────────── -->
+  <!-- ── Home view ─────────────────────────────────────────────────────────── -->
   <div id="home-view" class="view hidden">
     <div id="featured-container"></div>
     <div class="home-archive-btn-wrap">
@@ -66,6 +67,7 @@
 
   <!-- ── Viewer view ───────────────────────────────────────────────────────── -->
   <div id="viewer-view" class="view hidden" aria-label="צופה עיתון">
+
     <div id="viewer-topbar">
       <button id="btn-back" class="viewer-btn">← חזרה</button>
       <span id="page-indicator" class="page-indicator"></span>
@@ -73,11 +75,20 @@
         <button id="btn-fullscreen" class="viewer-btn icon-btn" title="מסך מלא">&#x26F6;</button>
       </div>
     </div>
-    <div id="flipbook-wrap">
-      <button id="btn-prev" class="flip-nav flip-nav-prev" aria-label="הדף הקודם">&#10094;</button>
-      <div id="flipbook-container"></div>
-      <button id="btn-next" class="flip-nav flip-nav-next" aria-label="הדף הבא">&#10095;</button>
+
+    <div id="spread-wrap">
+      <!-- RTL: left button = go forward (deeper into newspaper) -->
+      <button id="btn-nav-left"  class="nav-btn nav-btn-left"  aria-label="הדף הבא">❮</button>
+
+      <!-- RTL spread: right canvas = current page, left canvas = next page -->
+      <div id="spread-container">
+        <canvas id="canvas-right"></canvas>
+        <canvas id="canvas-left"></canvas>
+      </div>
+
+      <button id="btn-nav-right" class="nav-btn nav-btn-right" aria-label="הדף הקודם">❯</button>
     </div>
+
   </div>
 
   <!-- ── Error toast ───────────────────────────────────────────────────────── -->

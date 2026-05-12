@@ -79,10 +79,10 @@ const Viewer = (() => {
   }
 
   function updateNavButtons() {
-    const btnLeft  = document.getElementById('btn-nav-left');   // ❮ = go back
-    const btnRight = document.getElementById('btn-nav-right');  // ❯ = go forward
-    if (btnLeft)  btnLeft.disabled  = currentPage <= 1;
-    if (btnRight) btnRight.disabled = currentPage >= totalPages;
+    const btnLeft  = document.getElementById('btn-nav-left');   // ❮ = next page (forward in Hebrew)
+    const btnRight = document.getElementById('btn-nav-right');  // ❯ = prev page (back)
+    if (btnLeft)  btnLeft.disabled  = currentPage >= totalPages;
+    if (btnRight) btnRight.disabled = currentPage <= 1;
   }
 
   // ── Open / Close ───────────────────────────────────────────────────────────
@@ -151,8 +151,8 @@ const Viewer = (() => {
   // ── Wire buttons ───────────────────────────────────────────────────────────
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-nav-left').addEventListener('click', goPrev);   // ❮ = go back
-    document.getElementById('btn-nav-right').addEventListener('click', goNext);  // ❯ = go forward
+    document.getElementById('btn-nav-left').addEventListener('click', goNext);   // ❮ = next page (Hebrew: forward is left)
+    document.getElementById('btn-nav-right').addEventListener('click', goPrev);  // ❯ = prev page
     document.getElementById('btn-back').addEventListener('click', () => window.App.showHome());
     document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
   });

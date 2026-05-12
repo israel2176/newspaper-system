@@ -3,17 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="description" content="ארכיון גיליונות העיתון המקומון">
-  <title>המקומון — ארכיון גיליונות</title>
+  <meta name="description" content="ארכיון גיליונות עמנואל שלי">
+  <title>עמנואל שלי</title>
 
-  <!-- Preconnect to speed up font loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-  <!-- StPageFlip (MIT license) -->
   <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
-
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -27,7 +24,7 @@
       </div>
 
       <div class="masthead-center">
-        <h1 id="mh-name" class="masthead-title">המקומון</h1>
+        <h1 id="mh-name" class="masthead-title">עמנואל שלי</h1>
         <div class="masthead-rules">
           <div class="masthead-rule thick"></div>
           <div class="masthead-rule thin"></div>
@@ -50,36 +47,42 @@
     <p id="loading-text" class="loading-label">טוען...</p>
   </div>
 
+  <!-- ── Home view (גיליון אחרון) ─────────────────────────────────────────── -->
+  <div id="home-view" class="view hidden">
+    <div id="featured-container"></div>
+    <div class="home-archive-btn-wrap">
+      <button id="btn-to-archive" class="archive-link-btn">ארכיון גיליונות ישנים ←</button>
+    </div>
+  </div>
+
   <!-- ── Archive view ──────────────────────────────────────────────────────── -->
   <div id="archive-view" class="view hidden" aria-label="ארכיון גיליונות">
+    <div class="archive-topbar">
+      <button id="btn-archive-back" class="back-link-btn">← חזרה לגיליון האחרון</button>
+      <h2 class="archive-heading">ארכיון גיליונות</h2>
+    </div>
     <div id="archive-container"></div>
   </div>
 
   <!-- ── Viewer view ───────────────────────────────────────────────────────── -->
   <div id="viewer-view" class="view hidden" aria-label="צופה עיתון">
-
     <div id="viewer-topbar">
-      <button id="btn-back" class="viewer-btn" title="חזרה לארכיון" aria-label="חזרה לארכיון">
-        ← ארכיון
-      </button>
+      <button id="btn-back" class="viewer-btn">← חזרה</button>
       <span id="page-indicator" class="page-indicator"></span>
       <div class="viewer-btn-group">
-        <button id="btn-fullscreen" class="viewer-btn icon-btn" title="מסך מלא" aria-label="מסך מלא">&#x26F6;</button>
+        <button id="btn-fullscreen" class="viewer-btn icon-btn" title="מסך מלא">&#x26F6;</button>
       </div>
     </div>
-
     <div id="flipbook-wrap">
-      <button id="btn-prev" class="flip-nav flip-nav-prev" title="הדף הקודם" aria-label="הדף הקודם">&#10094;</button>
+      <button id="btn-prev" class="flip-nav flip-nav-prev" aria-label="הדף הקודם">&#10094;</button>
       <div id="flipbook-container"></div>
-      <button id="btn-next" class="flip-nav flip-nav-next" title="הדף הבא" aria-label="הדף הבא">&#10095;</button>
+      <button id="btn-next" class="flip-nav flip-nav-next" aria-label="הדף הבא">&#10095;</button>
     </div>
-
   </div>
 
   <!-- ── Error toast ───────────────────────────────────────────────────────── -->
   <div id="error-toast" class="error-toast hidden" role="alert"></div>
 
-  <!-- Scripts -->
   <script src="js/config.js"></script>
   <script src="js/archive.js"></script>
   <script src="js/viewer.js"></script>

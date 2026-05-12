@@ -14,8 +14,14 @@ window.App = (() => {
   });
 
   function hebrewDate(date) {
-    try { return hebrewFmt.format(date); }
-    catch (_) { return date.toLocaleDateString('he-IL'); }
+    try {
+      const parts = hebrewFmt.formatToParts(date);
+      const get   = t => (parts.find(p => p.type === t) || {}).value || '';
+      const norm  = s => s.replace(/״/g, '"').replace(/^ב/, '');
+      return `${norm(get('day'))} ${norm(get('month'))} ${norm(get('year'))}`;
+    } catch (_) {
+      return date.toLocaleDateString('he-IL');
+    }
   }
 
   // ── View switching ─────────────────────────────────────────────────────────

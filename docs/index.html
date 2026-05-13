@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
@@ -118,14 +118,9 @@
       </div>
     </div>
 
-    <div id="spread-wrap">
+    <div id="flipbook-wrap">
       <button id="btn-nav-left"  class="nav-btn nav-btn-left"  aria-label="הדף הבא">❮</button>
-
-      <div id="spread-container">
-        <canvas id="canvas-right"></canvas>
-        <canvas id="canvas-left" style="display:none"></canvas>
-      </div>
-
+      <div id="flipbook"></div>
       <button id="btn-nav-right" class="nav-btn nav-btn-right" aria-label="הדף הקודם">❯</button>
     </div>
 

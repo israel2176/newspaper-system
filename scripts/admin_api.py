@@ -89,26 +89,34 @@ async def upload_issue(
         if not spreads:
             raise HTTPException(500, "PDF produced no pages")
 
-        # Each PDF page is a double-page spread; split down the middle.
-        # Right half is the earlier page in Hebrew (RTL), so it goes first.
-        pages = []
-        for spread in spreads:
+        # Cover (first PDF page) is a single printed page — keep whole.
+        # All remaining PDF pages are double-page spreads: split at midpoint,
+        # right half first (Hebrew RTL = earlier page in reading order).
+        pages = [spreads[0]]
+        for spread in spreads[1:]:
             w, h = spread.size
             mid = w // 2
             pages.append(spread.crop((mid, 0, w,   h)))  # right half — earlier page
             pages.append(spread.crop((0,   0, mid, h)))  # left half  — later page
 
+        # Thumbnail from cover
         thumb = issue_dir / "thumb.jpg"
         img = pages[0].copy()
         new_h = int(img.height * THUMB_WIDTH / img.width)
         img.resize((THUMB_WIDTH, new_h), Image.LANCZOS).save(str(thumb), "JPEG", quality=82, optimize=True)
 
-        pdf_dest = issue_dir / "issue.pdf"
-        rgb_pages = [p.convert("RGB") for p in pages]
-        rgb_pages[0].save(str(pdf_dest), "PDF", save_all=True,
-                          append_images=rgb_pages[1:], resolution=FLATTEN_DPI)
+        # Save individual page JPEGs for the flip viewer
+        pages_dir = issue_dir / "pages"
+        pages_dir.mkdir(exist_ok=True)
+        for i, page in enumerate(pages, 1):
+            page.convert("RGB").save(
+                str(pages_dir / f"page-{i:03d}.jpg"),
+                "JPEG", quality=85, optimize=True,
+            )
 
-        size_mb = round(pdf_dest.stat().st_size / (1024 * 1024), 1)
+        size_mb = round(
+            sum(f.stat().st_size for f in pages_dir.iterdir()) / (1024 * 1024), 1
+        )
         log.info("Issue %s saved: %d spreads → %d pages, %.1f MB", number, len(spreads), len(pages), size_mb)
 
     finally:
@@ -124,7 +132,6 @@ async def upload_issue(
         "pages": len(pages),
         "path": f"newspaper/{year}/issue-{number}/",
         "thumb": f"newspaper/{year}/issue-{number}/thumb.jpg",
-        "pdf": f"newspaper/{year}/issue-{number}/issue.pdf",
         "size_mb": size_mb,
     })
     issues.sort(key=lambda x: x["number"], reverse=True)

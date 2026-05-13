@@ -85,9 +85,18 @@ async def upload_issue(
 
     try:
         log.info("Rasterizing issue %s at %d DPI …", number, FLATTEN_DPI)
-        pages = convert_from_path(str(tmp_path), dpi=FLATTEN_DPI, fmt="jpeg", thread_count=2)
-        if not pages:
+        spreads = convert_from_path(str(tmp_path), dpi=FLATTEN_DPI, fmt="jpeg", thread_count=2)
+        if not spreads:
             raise HTTPException(500, "PDF produced no pages")
+
+        # Each PDF page is a double-page spread; split down the middle.
+        # Right half is the earlier page in Hebrew (RTL), so it goes first.
+        pages = []
+        for spread in spreads:
+            w, h = spread.size
+            mid = w // 2
+            pages.append(spread.crop((mid, 0, w,   h)))  # right half — earlier page
+            pages.append(spread.crop((0,   0, mid, h)))  # left half  — later page
 
         thumb = issue_dir / "thumb.jpg"
         img = pages[0].copy()
@@ -100,7 +109,7 @@ async def upload_issue(
                           append_images=rgb_pages[1:], resolution=FLATTEN_DPI)
 
         size_mb = round(pdf_dest.stat().st_size / (1024 * 1024), 1)
-        log.info("Issue %s saved: %d pages, %.1f MB", number, len(pages), size_mb)
+        log.info("Issue %s saved: %d spreads → %d pages, %.1f MB", number, len(spreads), len(pages), size_mb)
 
     finally:
         tmp_path.unlink(missing_ok=True)

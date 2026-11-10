@@ -5,9 +5,9 @@ compatibility_date = "2025-06-01"
 [vars]
 GITHUB_REPO   = "israel2176/newspaper-system"
 GITHUB_BRANCH = "master"
-# Optional: comma-separated sender addresses/domains allowed to publish (empty = anyone)
-ALLOWED_SENDERS = ""
 # Optional: also forward every email to this (verified) address, e.g. your personal mailbox
 FORWARD_TO = ""
 
-# Secret (not here!):  npx wrangler secret put GITHUB_TOKEN
+# Secrets (set by the "Deploy email worker" workflow from GitHub secrets, never here):
+#   GITHUB_TOKEN     — token that can write to the repository
+#   ALLOWED_SENDERS  — comma-separated sender addresses allowed to publish

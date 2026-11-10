@@ -9,12 +9,13 @@ export default {
   async email(message, env, ctx) {
     const raw = await new Response(message.raw).arrayBuffer();
     const email = await PostalMime.parse(raw);
-    // Envelope sender (e.g. your personal mailbox when it auto-forwards) + the From header (the paper)
-    const from = `${message.from || ''} ${email.from?.address || ''}`.toLowerCase();
+    // Envelope sender and From header — both must be on the allow-list
+    const senders = [message.from, email.from?.address];
+    const from = senders.filter(Boolean).join(' / ');
 
-    if (!isAllowedSender(from, env.ALLOWED_SENDERS)) {
-      console.log(`Ignored email from ${from}`);
-      if (env.FORWARD_TO) await message.forward(env.FORWARD_TO);
+    if (!isAllowedSender(senders, env.ALLOWED_SENDERS)) {
+      console.log(`Rejected email from ${from}`);
+      message.setReject('Sender not allowed');
       return;
     }
     const pdfs = (email.attachments || []).filter(isPdf);
@@ -39,9 +40,14 @@ export default {
 
 // ── helpers (exported for tests) ────────────────────────────────────────────
 
-export function isAllowedSender(from, allowed) {
+// ALLOWED_SENDERS is a Worker secret: comma-separated addresses ("a@x.com") or
+// whole domains ("@x.com"). With no list set, every email is rejected.
+export function isAllowedSender(senders, allowed) {
   const list = (allowed || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  return list.length === 0 || list.some(s => from.includes(s));
+  const addrs = senders.filter(Boolean).map(s => s.trim().toLowerCase());
+  if (!list.length || !addrs.length) return false;
+  const ok = (addr) => list.some(a => (a.startsWith('@') ? addr.endsWith(a) : addr === a));
+  return addrs.every(ok);
 }
 
 export function isPdf(att) {

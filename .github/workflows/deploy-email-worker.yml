@@ -1,6 +1,7 @@
 # Deploys the Cloudflare Email Worker (cloudflare/email-worker) that receives the
 # newspaper by email and drops the PDF into inbox/.
-# Needs repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, NEWSPAPER_GITHUB_TOKEN
+# Needs repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, NEWSPAPER_GITHUB_TOKEN,
+# ALLOWED_SENDERS (comma-separated sender addresses; kept secret, never in the repo)
 name: Deploy email worker
 
 on:
@@ -26,6 +27,7 @@ jobs:
           CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           NEWSPAPER_GITHUB_TOKEN: ${{ secrets.NEWSPAPER_GITHUB_TOKEN }}
+          ALLOWED_SENDERS: ${{ secrets.ALLOWED_SENDERS }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::notice::CLOUDFLARE_API_TOKEN is not set — skipping deploy (see cloudflare/email-worker/README.md)"
@@ -34,4 +36,9 @@ jobs:
           npx wrangler deploy
           if [ -n "$NEWSPAPER_GITHUB_TOKEN" ]; then
             echo "$NEWSPAPER_GITHUB_TOKEN" | npx wrangler secret put GITHUB_TOKEN
+          fi
+          if [ -n "$ALLOWED_SENDERS" ]; then
+            echo "$ALLOWED_SENDERS" | npx wrangler secret put ALLOWED_SENDERS
+          else
+            echo "::warning::ALLOWED_SENDERS secret is not set — the worker rejects all email until it is"
           fi

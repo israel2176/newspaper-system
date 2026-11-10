@@ -19,6 +19,7 @@ Configuration is read from environment variables (see config.example.env).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -146,15 +147,74 @@ def save_page_thumb(page: Image.Image, dest: Path) -> None:
     page.resize((PAGE_THUMB_WIDTH, h), Image.LANCZOS).save(dest, "JPEG", quality=72, optimize=True)
 
 
+def file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def cover_hash(img: Image.Image) -> str:
+    """64-bit average hash of the cover — survives re-exporting/re-compressing the PDF."""
+    small = img.convert("L").resize((8, 8), Image.LANCZOS)
+    px = list(small.getdata())
+    avg = sum(px) / len(px)
+    return f"{sum(1 << i for i, v in enumerate(px) if v >= avg):016x}"
+
+
+def hamming(a: str, b: str) -> int:
+    return bin(int(a, 16) ^ int(b, 16)).count("1")
+
+
+def find_duplicate(manifest: dict, sha: str, pages: list[Image.Image] | None = None) -> dict | None:
+    """An already published issue with the same file, or the same page count + cover."""
+    for issue in manifest["issues"]:
+        if issue.get("sha256") == sha:
+            return issue
+    if pages is None:
+        return None
+    ch = cover_hash(pages[0])
+    for issue in manifest["issues"]:
+        if issue.get("pages") != len(pages):
+            continue
+        known = issue.get("cover_hash")
+        if not known:
+            cover_file = SITE_DIR / issue["path"] / "pages" / "page-001.jpg"
+            if not cover_file.exists():
+                continue
+            known = issue["cover_hash"] = cover_hash(Image.open(cover_file))
+        if hamming(ch, known) <= 4:
+            return issue
+    return None
+
+
 def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_date: date,
                 title: str | None = None, replace: bool = False) -> dict | None:
+    # 1. Exact same file already published?
+    sha = file_sha256(pdf_path)
+    dup = find_duplicate(manifest, sha)
+    if dup:
+        log.info("Same file as issue %s — skipping", dup["number"])
+        return None
+
+    # 2. Same issue in a different file (same page count + same cover)?
+    pages = render_pages(pdf_path)
+    if not pages:
+        raise ValueError("PDF produced no pages")
+    dup = find_duplicate(manifest, sha, pages)
+    if dup:
+        log.info("Same content as issue %s (%d pages, same cover) — skipping", dup["number"], len(pages))
+        return None
+
     number = number or next_issue_number(manifest)
     issue_id = f"{issue_date.year}-{number}"
     existing = [i for i in manifest["issues"] if i["number"] == number]
     if existing and not replace:
         log.info("Issue %s already published — skipping", number)
         return None
-    for old in existing:
+    for old in existing:   # same number, different content → treat as a correction
+        log.info("Replacing issue %s with the new file", number)
         shutil.rmtree(SITE_DIR / old["path"], ignore_errors=True)
         manifest["issues"].remove(old)
 
@@ -166,9 +226,6 @@ def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_dat
     pages_dir.mkdir(parents=True)
 
     try:
-        pages = render_pages(pdf_path)
-        if not pages:
-            raise ValueError("PDF produced no pages")
         thumbs_dir = pages_dir / "thumbs"
         thumbs_dir.mkdir()
         for i, page in enumerate(pages, 1):
@@ -200,6 +257,8 @@ def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_dat
         "thumb": rel + "thumb.jpg",
         "cover": rel + "cover.jpg",
         "page_thumbs": True,
+        "sha256": sha,
+        "cover_hash": cover_hash(pages[0]),
         "size_mb": size_mb,
     }
     manifest["issues"].append(entry)

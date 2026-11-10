@@ -10,9 +10,12 @@ test('file name keeps issue number and date', () => {
 });
 
 test('sender filter', () => {
-  assert.ok(isAllowedSender('ed@paper.co.il', ''));
-  assert.ok(isAllowedSender('ed@paper.co.il', 'other.com, paper.co.il'));
-  assert.ok(!isAllowedSender('spam@x.com', 'paper.co.il'));
+  assert.ok(!isAllowedSender(['ed@paper.co.il'], ''));                       // no list → reject
+  assert.ok(isAllowedSender(['Ed@Paper.co.il', 'ed@paper.co.il'], 'a@b.com, ed@paper.co.il'));
+  assert.ok(isAllowedSender(['x@paper.co.il'], '@paper.co.il'));             // whole domain
+  assert.ok(!isAllowedSender(['ed@paper.co.il.evil.com'], 'ed@paper.co.il'));
+  assert.ok(!isAllowedSender(['spam@x.com', 'ed@paper.co.il'], 'ed@paper.co.il')); // forged From
+  assert.ok(!isAllowedSender([], 'ed@paper.co.il'));
 });
 
 test('date in Israel time', () => {
@@ -42,11 +45,23 @@ test('email() uploads the PDF to inbox/', async () => {
     from: 'ed@paper.co.il',
     raw: new Blob([mime]).stream(),
     forward: async (to) => { forwarded = to; },
+    setReject: () => { throw new Error('should not reject'); },
   };
-  await worker.email(message, { GITHUB_TOKEN: 't', GITHUB_REPO: 'o/r', GITHUB_BRANCH: 'master', ALLOWED_SENDERS: 'paper.co.il', FORWARD_TO: 'me@x.com' });
+  await worker.email(message, { GITHUB_TOKEN: 't', GITHUB_REPO: 'o/r', GITHUB_BRANCH: 'master', ALLOWED_SENDERS: 'ed@paper.co.il', FORWARD_TO: 'me@x.com' });
   assert.equal(calls.length, 2);                       // first 422 → retried under a unique name
   assert.match(decodeURIComponent(calls[0].url), /contents\/inbox\/גיליון 291 - paper 2026-11-13\.pdf$/);
   assert.equal(Buffer.from(calls[1].body.content, 'base64').equals(pdf), true);
   assert.equal(calls[1].body.branch, 'master');
   assert.equal(forwarded, 'me@x.com');
+});
+
+test('email() rejects unknown senders without uploading', async () => {
+  let fetched = false, rejected = null;
+  globalThis.fetch = async () => { fetched = true; return new Response('{}'); };
+  const mime = 'From: spam@x.com\r\nSubject: hi\r\n\r\nbody';
+  await worker.email(
+    { from: 'spam@x.com', raw: new Blob([mime]).stream(), setReject: (r) => { rejected = r; }, forward: async () => {} },
+    { GITHUB_TOKEN: 't', GITHUB_REPO: 'o/r', ALLOWED_SENDERS: 'ed@paper.co.il' });
+  assert.equal(fetched, false);
+  assert.ok(rejected);
 });

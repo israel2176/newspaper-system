@@ -1,13 +1,11 @@
 # Publishes new newspaper issues automatically.
-#  • Every hour: checks the newspaper mailbox (IMAP) for new emails with a PDF.
-#  • On every push of a PDF into inbox/: publishes it right away.
+#  • Runs whenever a PDF lands in inbox/ — put there by the Cloudflare email
+#    worker (cloudflare/email-worker) or by a manual upload on GitHub.
 #  • Manually: Actions → "Publish newspaper" → Run workflow.
 # New pages are committed to public/newspaper/ — Vercel then redeploys the site.
 name: Publish newspaper
 
 on:
-  schedule:
-    - cron: "17 * * * *"
   push:
     branches: [master, main]
     paths: ["inbox/**.pdf", "inbox/**.PDF"]
@@ -33,16 +31,11 @@ jobs:
           sudo apt-get install -y -qq poppler-utils
           pip install -q -r scripts/requirements.txt
 
-      - name: Publish new issues (inbox + email)
+      - name: Publish PDFs from inbox/
         env:
-          EMAIL_USER:        ${{ secrets.EMAIL_USER }}
-          EMAIL_PASS:        ${{ secrets.EMAIL_PASS }}
-          IMAP_HOST:         ${{ vars.IMAP_HOST }}
-          SENDER_FILTER:     ${{ vars.SENDER_FILTER }}
-          SUBJECT_FILTER:    ${{ vars.SUBJECT_FILTER }}
-          MAX_ISSUES:        ${{ vars.MAX_ISSUES }}
-          NEWSPAPER_NAME:    ${{ vars.NEWSPAPER_NAME }}
-        run: python scripts/newspaper_pipeline.py all
+          MAX_ISSUES:     ${{ vars.MAX_ISSUES }}
+          NEWSPAPER_NAME: ${{ vars.NEWSPAPER_NAME }}
+        run: python scripts/newspaper_pipeline.py inbox
 
       - name: Commit & push
         run: |

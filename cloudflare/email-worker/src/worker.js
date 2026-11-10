@@ -9,7 +9,7 @@ export default {
   async email(message, env, ctx) {
     const raw = await new Response(message.raw).arrayBuffer();
     const email = await PostalMime.parse(raw);
-    // Envelope sender (e.g. your Gmail when it auto-forwards) + the From header (the paper)
+    // Envelope sender (e.g. your personal mailbox when it auto-forwards) + the From header (the paper)
     const from = `${message.from || ''} ${email.from?.address || ''}`.toLowerCase();
 
     if (!isAllowedSender(from, env.ALLOWED_SENDERS)) {

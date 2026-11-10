@@ -3,10 +3,9 @@
 Newspaper pipeline — turns a newspaper PDF into web pages for the site.
 
 Sources:
-  email   Read new emails (IMAP, e.g. a dedicated Gmail inbox) and publish
-          every PDF attachment found.
-  inbox   Publish every PDF dropped into the repository's inbox/ folder
-          (upload through the GitHub web UI), then delete it.
+  inbox   Publish every PDF in the repository's inbox/ folder, then delete it.
+          PDFs get there from the Cloudflare email worker (cloudflare/email-worker)
+          or from a manual upload through the GitHub web UI.
   file    Publish a single local PDF:  file path/to.pdf [--number N] [--date YYYY-MM-DD]
 
 Output (inside the static site, deployed by Vercel):
@@ -20,19 +19,13 @@ Configuration is read from environment variables (see config.example.env).
 from __future__ import annotations
 
 import argparse
-import email
-import email.utils
-import imaplib
 import json
 import logging
 import os
 import re
 import shutil
 import sys
-import tempfile
 from datetime import date, datetime, timedelta, timezone
-from email import policy
-from email.header import decode_header
 from pathlib import Path
 
 from PIL import Image
@@ -52,16 +45,6 @@ SITE_DIR         = Path(env("SITE_DIR", str(ROOT / "public")))
 STORAGE_DIR      = SITE_DIR / "newspaper"
 MANIFEST_FILE    = STORAGE_DIR / "manifest.json"
 INBOX_DIR        = Path(env("INBOX_DIR", str(ROOT / "inbox")))
-
-IMAP_HOST        = env("IMAP_HOST", "imap.gmail.com")
-IMAP_PORT        = int(env("IMAP_PORT", "993"))
-EMAIL_USER       = env("EMAIL_USER")
-EMAIL_PASS       = env("EMAIL_PASS").replace(" ", "")  # Gmail app passwords are shown with spaces
-SENDER_FILTER    = env("SENDER_FILTER")    # comma-separated, matched as substring of From
-SUBJECT_FILTER   = env("SUBJECT_FILTER")   # comma-separated, matched as substring of Subject
-SEARCH_DAYS      = int(env("SEARCH_DAYS", "21"))
-PROCESSED_FOLDER = env("PROCESSED_FOLDER", "newspaper-processed")
-
 NEWSPAPER_NAME   = env("NEWSPAPER_NAME", "עמנואל שלי")
 NEWSPAPER_TAGLINE = env("NEWSPAPER_TAGLINE", "")
 PAGE_HEIGHT      = int(env("PAGE_HEIGHT", "1800"))   # px height of each saved page
@@ -76,19 +59,6 @@ log = logging.getLogger("newspaper")
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-
-def decode_str(value) -> str:
-    out = []
-    for chunk, enc in decode_header(str(value or "")):
-        if isinstance(chunk, bytes):
-            try:
-                out.append(chunk.decode(enc or "utf-8", errors="replace"))
-            except LookupError:
-                out.append(chunk.decode("utf-8", errors="replace"))
-        else:
-            out.append(chunk)
-    return "".join(out)
 
 
 def parse_issue_number(text: str) -> int | None:
@@ -108,28 +78,6 @@ def parse_issue_number(text: str) -> int | None:
             continue
         return n
     return None
-
-
-def is_newspaper_message(msg) -> bool:
-    sender = decode_str(msg.get("From", "")).lower()
-    subject = decode_str(msg.get("Subject", ""))
-    if SENDER_FILTER and not any(s.strip().lower() in sender for s in SENDER_FILTER.split(",") if s.strip()):
-        return False
-    if SUBJECT_FILTER and not any(s.strip() in subject for s in SUBJECT_FILTER.split(",") if s.strip()):
-        return False
-    return True
-
-
-def pdf_attachments(msg):
-    """Yield (filename, bytes) for every PDF attachment (incl. forwarded mails)."""
-    for part in msg.walk():
-        if part.is_multipart():
-            continue
-        fn = decode_str(part.get_filename() or "")
-        if part.get_content_type() == "application/pdf" or fn.lower().endswith(".pdf"):
-            payload = part.get_payload(decode=True)
-            if payload and b"%PDF-" in payload[:1024]:
-                yield (fn or "newspaper.pdf"), payload
 
 
 # ── Manifest ──────────────────────────────────────────────────────────────────
@@ -265,63 +213,6 @@ def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_dat
 # ── Sources ───────────────────────────────────────────────────────────────────
 
 
-def run_email(manifest: dict) -> int:
-    if not EMAIL_USER or not EMAIL_PASS:
-        log.error("EMAIL_USER / EMAIL_PASS are not set — skipping email check")
-        return 0
-    published = 0
-    conn = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
-    try:
-        conn.login(EMAIL_USER, EMAIL_PASS)
-        conn.select("INBOX")
-        since = (date.today() - timedelta(days=SEARCH_DAYS)).strftime("%d-%b-%Y")
-        # Non-ASCII (Hebrew) filters are applied locally — IMAP SEARCH can't take them reliably.
-        status, data = conn.uid("search", None, f"(SINCE {since})")
-        uids = data[0].split() if status == "OK" and data and data[0] else []
-        log.info("%d email(s) in INBOX since %s", len(uids), since)
-        for uid in uids:
-            status, hdr = conn.uid("fetch", uid, "(BODY.PEEK[HEADER])")
-            if status != "OK" or not hdr or not isinstance(hdr[0], tuple):
-                continue
-            head = email.message_from_bytes(hdr[0][1], policy=policy.default)
-            if not is_newspaper_message(head):
-                continue
-            status, full = conn.uid("fetch", uid, "(BODY.PEEK[])")
-            if status != "OK":
-                continue
-            msg = email.message_from_bytes(full[0][1], policy=policy.default)
-            subject = decode_str(msg.get("Subject", ""))
-            attachments = list(pdf_attachments(msg))
-            if not attachments:
-                continue
-            log.info("Email %r with %d PDF(s)", subject, len(attachments))
-            try:
-                msg_date = email.utils.parsedate_to_datetime(msg.get("Date")).astimezone(IL_TZ).date()
-            except Exception:
-                msg_date = date.today()
-            for fn, payload in attachments:
-                with tempfile.TemporaryDirectory() as td:
-                    p = Path(td) / "issue.pdf"
-                    p.write_bytes(payload)
-                    num = parse_issue_number(fn) or parse_issue_number(subject)
-                    if publish_pdf(p, manifest, number=num, issue_date=msg_date):
-                        published += 1
-            # Move out of INBOX so it is not processed again (Gmail: adds a label + archives)
-            try:
-                conn.create(PROCESSED_FOLDER)
-            except Exception:
-                pass
-            if conn.uid("copy", uid, PROCESSED_FOLDER)[0] == "OK":
-                conn.uid("store", uid, "+FLAGS", "(\\Deleted)")
-                conn.expunge()
-    finally:
-        try:
-            conn.logout()
-        except Exception:
-            pass
-    return published
-
-
 def run_inbox(manifest: dict) -> int:
     published = 0
     for pdf in sorted(INBOX_DIR.glob("*.pdf")) + sorted(INBOX_DIR.glob("*.PDF")):
@@ -338,9 +229,7 @@ def run_inbox(manifest: dict) -> int:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("email")
     sub.add_parser("inbox")
-    sub.add_parser("all", help="inbox + email")
     f = sub.add_parser("file")
     f.add_argument("pdf", type=Path)
     f.add_argument("--number", type=int)
@@ -355,12 +244,7 @@ def main() -> None:
                     issue_date=args.date or datetime.now(IL_TZ).date(),
                     title=args.title, replace=True)
         return
-    total = 0
-    if args.cmd in ("inbox", "all"):
-        total += run_inbox(manifest)
-    if args.cmd in ("email", "all"):
-        total += run_email(manifest)
-    log.info("Done — %d new issue(s)", total)
+    log.info("Done — %d new issue(s)", run_inbox(manifest))
 
 
 if __name__ == "__main__":

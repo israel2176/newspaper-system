@@ -1,0 +1,61 @@
+# Publishes new newspaper issues automatically.
+#  • Every hour: checks the newspaper mailbox (IMAP) for new emails with a PDF.
+#  • On every push of a PDF into inbox/: publishes it right away.
+#  • Manually: Actions → "Publish newspaper" → Run workflow.
+# New pages are committed to public/newspaper/ — Vercel then redeploys the site.
+name: Publish newspaper
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  push:
+    branches: [master, main]
+    paths: ["inbox/**.pdf", "inbox/**.PDF"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-newspaper
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          pip install -q -r scripts/requirements.txt
+
+      - name: Publish new issues (inbox + email)
+        env:
+          EMAIL_USER:        ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS:        ${{ secrets.EMAIL_PASS }}
+          IMAP_HOST:         ${{ vars.IMAP_HOST }}
+          SENDER_FILTER:     ${{ vars.SENDER_FILTER }}
+          SUBJECT_FILTER:    ${{ vars.SUBJECT_FILTER }}
+          MAX_ISSUES:        ${{ vars.MAX_ISSUES }}
+          NEWSPAPER_NAME:    ${{ vars.NEWSPAPER_NAME }}
+        run: python scripts/newspaper_pipeline.py all
+
+      - name: Commit & push
+        run: |
+          git add -A public/newspaper inbox
+          if git diff --cached --quiet; then
+            echo "No new issues."
+            exit 0
+          fi
+          git config user.name  "newspaper-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish new newspaper issue(s)"
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 5))
+          done
+          exit 1

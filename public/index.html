@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="עמנואל שלי — העיתון הקהילתי של עמנואל. קראו את הגיליון החדש ואת ארכיון הגיליונות אונליין.">
+  <meta name="theme-color" content="#ffffff">
+  <meta property="og:title" content="עמנואל שלי — העיתון של עמנואל">
+  <meta property="og:description" content="הגיליון החדש וארכיון הגיליונות, לקריאה אונליין">
+  <meta property="og:image" content="/img/logo.png">
+  <title>עמנואל שלי — העיתון של עמנואל</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="/vendor/page-flip.browser.js" defer></script>
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">דילוג לתוכן</a>
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main">
+
+    <!-- ── Loading ─────────────────────────────────────────────────────────── -->
+    <div id="loading-view" class="view loading-view" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="loading-text">טוען…</p>
+    </div>
+
+    <!-- ── Home ────────────────────────────────────────────────────────────── -->
+    <div id="home-view" class="view hidden">
+
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero-inner" id="hero">
+          <div class="hero-cover skeleton" id="hero-cover"></div>
+          <div class="hero-text">
+            <span class="eyebrow">הגיליון החדש</span>
+            <h1 id="hero-title" class="hero-title">עמנואל שלי</h1>
+            <p class="hero-meta" id="hero-meta"></p>
+            <p class="hero-desc">כל מה שקורה בעמנואל — חדשות הקהילה, אירועים, מבצעים ופרסומים. דפדפו בגיליון כמו בעיתון אמיתי.</p>
+            <div class="hero-actions">
+              <button type="button" class="btn btn-primary" id="hero-read" disabled>
+                קריאת הגיליון
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <a class="btn btn-ghost" href="#archive">גיליונות קודמים</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="archive" aria-labelledby="archive-title">
+        <div class="container">
+          <div class="section-head">
+            <h2 id="archive-title">ארכיון גיליונות</h2>
+            <span class="section-count" id="archive-count"></span>
+          </div>
+          <div id="archive-grid" class="issues-grid"></div>
+        </div>
+      </section>
+
+      <section class="section section-cta">
+        <div class="container">
+          <div class="cta-inner">
+            <div>
+              <h2>רוצים לפרסם בעמנואל שלי?</h2>
+              <p>הבמה הכי מוכרת בעיר — מגיעים לכל בית בעמנואל.</p>
+            </div>
+            <a class="btn btn-light" href="/contact">ליצירת קשר</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── Viewer ──────────────────────────────────────────────────────────── -->
+    <div id="viewer-view" class="view hidden" aria-label="צופה עיתון">
+      <div id="viewer-topbar">
+        <button id="btn-back" class="viewer-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          <span>לכל הגיליונות</span>
+        </button>
+        <div class="viewer-center">
+          <span id="viewer-title" class="viewer-title"></span>
+          <span id="page-indicator" class="page-indicator"></span>
+        </div>
+        <div class="viewer-btn-group">
+          <button id="btn-pages" class="viewer-btn icon-btn" title="כל העמודים (G)" aria-label="כל העמודים" aria-controls="pages-panel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+          </button>
+          <button id="btn-share" class="viewer-btn icon-btn" title="שיתוף" aria-label="שיתוף העמוד">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>
+          </button>
+          <button id="btn-first" class="viewer-btn icon-btn" title="חזרה לשער" aria-label="חזרה לשער">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 18l6-6-6-6M5 6v12"/></svg>
+          </button>
+          <button id="btn-zoom" class="viewer-btn icon-btn" title="הגדלה (Z)" aria-label="הגדלה">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2M11 8v6M8 11h6"/></svg>
+          </button>
+          <button id="btn-fullscreen" class="viewer-btn icon-btn" title="מסך מלא (F)" aria-label="מסך מלא">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="flipbook-wrap">
+        <button id="btn-nav-left"  class="nav-btn nav-btn-left"  aria-label="העמוד הבא">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div id="flipbook"></div>
+        <button id="btn-nav-right" class="nav-btn nav-btn-right" aria-label="העמוד הקודם">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+      <p class="viewer-hint">לחיצה כפולה על עמוד להגדלה · החלקה או חיצים לדפדוף</p>
+
+      <div id="pages-panel" class="pages-panel hidden" role="dialog" aria-label="כל העמודים">
+        <div class="pages-panel-head">
+          <strong>כל העמודים</strong>
+          <button id="pages-close" class="viewer-btn icon-btn" aria-label="סגירה">✕</button>
+        </div>
+        <div id="pages-grid" class="pages-grid"></div>
+      </div>
+
+      <div id="zoom-overlay" class="hidden" role="dialog" aria-label="הגדלת עמוד">
+        <div class="zoom-bar">
+          <button id="zoom-close" class="viewer-btn">✕ סגירה</button>
+          <div class="zoom-ctrls">
+            <button id="zoom-out" class="viewer-btn icon-btn" aria-label="הקטנה">−</button>
+            <span id="zoom-level" class="zoom-level">100%</span>
+            <button id="zoom-in" class="viewer-btn icon-btn" aria-label="הגדלה">+</button>
+          </div>
+        </div>
+        <div id="zoom-scroll"><div id="zoom-pages"></div></div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <div id="error-toast" class="error-toast hidden" role="alert"></div>
+
+  <script src="/js/config.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/archive.js"></script>
+  <script src="/js/viewer.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

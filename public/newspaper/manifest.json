@@ -1,6 +1,20 @@
 {
   "issues": [
     {
+      "id": "2026-311",
+      "number": 311,
+      "date": "2026-11-10",
+      "title": "גיליון 311",
+      "pages": 48,
+      "page_width": 1238,
+      "page_height": 1800,
+      "path": "newspaper/2026/issue-311/",
+      "thumb": "newspaper/2026/issue-311/thumb.jpg",
+      "cover": "newspaper/2026/issue-311/cover.jpg",
+      "page_thumbs": true,
+      "size_mb": 12.9
+    },
+    {
       "id": "2026-285",
       "number": 285,
       "date": "2026-03-14",
@@ -43,6 +57,6 @@
       "page_thumbs": true
     }
   ],
-  "updated": "2026-11-10T18:28:59+02:00",
+  "updated": "2026-11-10T19:39:26+02:00",
   "newspaper_name": "עמנואל שלי"
 }

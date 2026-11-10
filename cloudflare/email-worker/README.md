@@ -11,10 +11,9 @@
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
    - `NEWSPAPER_GITHUB_TOKEN`
+   - `ALLOWED_SENDERS`: הכתובות שמותר להן לשלוח, מופרדות בפסיק. רק מהכתובות האלה הגיליון יתפרסם. הרשימה נשמרת כסוד ולא מופיעה במאגר.
 
    אחר כך מריצים את Actions ← Deploy email worker.
 5. **יצירת הכתובת:** ב-Cloudflare, Email Routing ← Routing rules ← Create address. יוצרים כתובת, למשל `paper`, ובוחרים Send to a Worker ← `newspaper-email-inbox`.
-
-לסינון שולחים מגדירים את `ALLOWED_SENDERS` בקובץ `wrangler.toml`.
 
 </div>

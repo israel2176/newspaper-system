@@ -11,7 +11,8 @@
       "path": "newspaper/2026/issue-285/",
       "thumb": "newspaper/2026/issue-285/thumb.jpg",
       "cover": "newspaper/2026/issue-285/cover.jpg",
-      "size_mb": 10.1
+      "size_mb": 10.1,
+      "page_thumbs": true
     },
     {
       "id": "2026-276",
@@ -24,7 +25,8 @@
       "path": "newspaper/2026/issue-276/",
       "thumb": "newspaper/2026/issue-276/thumb.jpg",
       "cover": "newspaper/2026/issue-276/cover.jpg",
-      "size_mb": 12.9
+      "size_mb": 12.9,
+      "page_thumbs": true
     },
     {
       "id": "2025-264",
@@ -37,9 +39,10 @@
       "path": "newspaper/2025/issue-264/",
       "thumb": "newspaper/2025/issue-264/thumb.jpg",
       "cover": "newspaper/2025/issue-264/cover.jpg",
-      "size_mb": 8.6
+      "size_mb": 8.6,
+      "page_thumbs": true
     }
   ],
-  "updated": "2026-11-10T18:06:41+02:00",
+  "updated": "2026-11-10T18:28:59+02:00",
   "newspaper_name": "עמנואל שלי"
 }

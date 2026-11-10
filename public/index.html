@@ -86,6 +86,12 @@
           <span id="page-indicator" class="page-indicator"></span>
         </div>
         <div class="viewer-btn-group">
+          <button id="btn-pages" class="viewer-btn icon-btn" title="כל העמודים (G)" aria-label="כל העמודים" aria-controls="pages-panel" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+          </button>
+          <button id="btn-share" class="viewer-btn icon-btn" title="שיתוף" aria-label="שיתוף העמוד">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>
+          </button>
           <button id="btn-first" class="viewer-btn icon-btn" title="חזרה לשער" aria-label="חזרה לשער">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 18l6-6-6-6M5 6v12"/></svg>
           </button>
@@ -108,6 +114,14 @@
         </button>
       </div>
       <p class="viewer-hint">לחיצה כפולה על עמוד להגדלה · החלקה או חיצים לדפדוף</p>
+
+      <div id="pages-panel" class="pages-panel hidden" role="dialog" aria-label="כל העמודים">
+        <div class="pages-panel-head">
+          <strong>כל העמודים</strong>
+          <button id="pages-close" class="viewer-btn icon-btn" aria-label="סגירה">✕</button>
+        </div>
+        <div id="pages-grid" class="pages-grid"></div>
+      </div>
 
       <div id="zoom-overlay" class="hidden" role="dialog" aria-label="הגדלת עמוד">
         <div class="zoom-bar">

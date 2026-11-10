@@ -208,6 +208,7 @@ const Viewer = (() => {
 
   function close() {
     closeZoom();
+    closePages();
     if (pageFlip) { try { pageFlip.destroy(); } catch (_) {} pageFlip = null; }
     currentIssue = null;
   }
@@ -279,6 +280,70 @@ const Viewer = (() => {
     }
   }
 
+  // ── Page picker (thumbnails of every page) ──────────────────────────────────
+
+  function goToPage(heb) {
+    if (!pageFlip) return;
+    const lib = hebToLib(Math.min(Math.max(heb, 1), currentIssue.pages));
+    pageFlip.turnToPage(lib);
+    updateUi(pageFlip.getCurrentPageIndex());
+  }
+
+  function openPages() {
+    if (!currentIssue) return;
+    const grid = $('pages-grid');
+    const current = visibleHebPages();
+    const useThumbs = !!currentIssue.page_thumbs;
+    grid.innerHTML = '';
+    for (let heb = 1; heb <= currentIssue.pages; heb++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'page-thumb' + (current.includes(heb) ? ' is-current' : '');
+      btn.setAttribute('aria-label', `מעבר לעמוד ${heb}`);
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.alt = '';
+      const n = String(heb).padStart(3, '0');
+      img.src = useThumbs
+        ? `${NEWSPAPER_CONFIG.storageBase}/${currentIssue.path}pages/thumbs/page-${n}.jpg`
+        : pageUrl(heb);
+      const label = document.createElement('span');
+      label.textContent = heb;
+      btn.append(img, label);
+      btn.addEventListener('click', () => { closePages(); goToPage(heb); });
+      grid.append(btn);
+    }
+    $('pages-panel').classList.remove('hidden');
+    $('btn-pages').setAttribute('aria-expanded', 'true');
+    grid.querySelector('.is-current')?.scrollIntoView({ block: 'center' });
+  }
+
+  function closePages() {
+    const panel = $('pages-panel');
+    if (panel && !panel.classList.contains('hidden')) {
+      panel.classList.add('hidden');
+      $('btn-pages').setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  // ── Share ──────────────────────────────────────────────────────────────────
+
+  async function share() {
+    if (!currentIssue) return;
+    const url = window.location.href;
+    const title = `${currentIssue.title || 'גיליון ' + currentIssue.number} | עמנואל שלי`;
+    if (navigator.share) {
+      try { await navigator.share({ title, url }); } catch (_) {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      window.App.showError('הקישור לעמוד הועתק');
+    } catch (_) {
+      window.prompt('העתיקו את הקישור:', url);
+    }
+  }
+
   // ── Fullscreen ─────────────────────────────────────────────────────────────
 
   function toggleFullscreen() {
@@ -295,6 +360,7 @@ const Viewer = (() => {
 
   const viewerOpen = () => currentIssue && !$('viewer-view').classList.contains('hidden');
   const zoomOpen   = () => !$('zoom-overlay').classList.contains('hidden');
+  const pagesOpen  = () => !$('pages-panel').classList.contains('hidden');
 
   document.addEventListener('keydown', (e) => {
     if (!viewerOpen()) return;
@@ -304,6 +370,8 @@ const Viewer = (() => {
       if (e.key === '-') setZoom(zoomLevel - 0.5);
       return;
     }
+    if (pagesOpen()) { if (e.key === 'Escape') closePages(); return; }
+    if (e.key === 'g' || e.key === 'G') { openPages(); return; }
     if (e.key === 'ArrowLeft' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
     else if (e.key === 'ArrowRight' || e.key === 'PageUp') { e.preventDefault(); prev(); }
     else if (e.key === 'Home') { e.preventDefault(); pageFlip?.turnToPage(libTotal - 1); updateUi(libTotal - 1); }
@@ -333,6 +401,9 @@ const Viewer = (() => {
     $('btn-nav-right').addEventListener('click', prev);
     $('btn-fullscreen').addEventListener('click', toggleFullscreen);
     $('btn-zoom').addEventListener('click', () => openZoom());
+    $('btn-pages').addEventListener('click', () => (pagesOpen() ? closePages() : openPages()));
+    $('pages-close').addEventListener('click', closePages);
+    $('btn-share').addEventListener('click', share);
     $('btn-first').addEventListener('click', () => {
       if (!pageFlip) return;
       pageFlip.turnToPage(libTotal - 1);
@@ -370,5 +441,5 @@ const Viewer = (() => {
     window.addEventListener('mouseup', () => { drag = null; sc.classList.remove('dragging'); });
   });
 
-  return { open, close, toggleFullscreen, next, prev };
+  return { open, close, toggleFullscreen, next, prev, goToPage };
 })();

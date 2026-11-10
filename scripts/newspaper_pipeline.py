@@ -67,6 +67,7 @@ NEWSPAPER_TAGLINE = env("NEWSPAPER_TAGLINE", "")
 PAGE_HEIGHT      = int(env("PAGE_HEIGHT", "1800"))   # px height of each saved page
 JPG_QUALITY      = int(env("JPG_QUALITY", "80"))
 THUMB_WIDTH      = int(env("THUMB_WIDTH", "400"))
+PAGE_THUMB_WIDTH = int(env("PAGE_THUMB_WIDTH", "200"))   # small per-page thumbnails (page picker)
 MAX_ISSUES       = int(env("MAX_ISSUES", "11"))      # 0 = keep everything
 SPREAD_RATIO     = float(env("SPREAD_RATIO", "1.0"))  # width/height above this = double page
 
@@ -192,6 +193,11 @@ def render_pages(pdf_path: Path) -> list[Image.Image]:
     return pages
 
 
+def save_page_thumb(page: Image.Image, dest: Path) -> None:
+    h = round(page.height * PAGE_THUMB_WIDTH / page.width)
+    page.resize((PAGE_THUMB_WIDTH, h), Image.LANCZOS).save(dest, "JPEG", quality=72, optimize=True)
+
+
 def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_date: date,
                 title: str | None = None, replace: bool = False) -> dict | None:
     number = number or next_issue_number(manifest)
@@ -215,9 +221,12 @@ def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_dat
         pages = render_pages(pdf_path)
         if not pages:
             raise ValueError("PDF produced no pages")
+        thumbs_dir = pages_dir / "thumbs"
+        thumbs_dir.mkdir()
         for i, page in enumerate(pages, 1):
             page.save(pages_dir / f"page-{i:03d}.jpg", "JPEG",
                       quality=JPG_QUALITY, optimize=True, progressive=True)
+            save_page_thumb(page, thumbs_dir / f"page-{i:03d}.jpg")
         cover = pages[0]
         thumb_h = round(cover.height * THUMB_WIDTH / cover.width)
         cover.resize((THUMB_WIDTH, thumb_h), Image.LANCZOS).save(
@@ -242,6 +251,7 @@ def publish_pdf(pdf_path: Path, manifest: dict, *, number: int | None, issue_dat
         "path": rel,
         "thumb": rel + "thumb.jpg",
         "cover": rel + "cover.jpg",
+        "page_thumbs": True,
         "size_mb": size_mb,
     }
     manifest["issues"].append(entry)

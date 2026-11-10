@@ -1,217 +1,147 @@
-// app.js — Main application controller
+// app.js — main controller: home page, routing, opening issues
 'use strict';
 
 window.App = (() => {
   let manifest = null;
-  let latestIssueNum = null;
+  const $ = (id) => document.getElementById(id);
 
-  // ── Hebrew calendar date (Hebcal API) ────────────────────────────────────
-
-  async function fetchHebrewDate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    const res  = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${y}-${m}-${d}&g2h=1`);
-    const data = await res.json();
-    return (data.hebrew || '').replace(/״/g, '"').replace(/[ְ-ׇ]/g, '');
-  }
-
-  // ── View switching ─────────────────────────────────────────────────────────
+  // ── Views ──────────────────────────────────────────────────────────────────
 
   const ALL_VIEWS = ['loading-view', 'home-view', 'viewer-view'];
 
   function _showViewInternal(which) {
-    const id = which + '-view';
     document.body.classList.toggle('viewer-mode', which === 'viewer');
-    ALL_VIEWS.forEach(v => {
-      document.getElementById(v).classList.toggle('hidden', v !== id);
-    });
+    ALL_VIEWS.forEach(v => $(v).classList.toggle('hidden', v !== which + '-view'));
   }
 
   function showLoading(text) {
     _showViewInternal('loading');
-    document.getElementById('loading-text').textContent = text || 'טוען...';
+    $('loading-text').textContent = text || 'טוען…';
   }
 
-  // ── Masthead ───────────────────────────────────────────────────────────────
+  // ── Home ───────────────────────────────────────────────────────────────────
 
-  function setMastheadToday() {
-    const labelEl = document.getElementById('mh-issue-label');
-    if (labelEl) labelEl.textContent = latestIssueNum ? 'גיליון אחרון' : 'גיליון';
-    document.getElementById('mh-issue').textContent = latestIssueNum || '—';
-    fetchHebrewDate(new Date())
-      .then(s => { document.getElementById('mh-date').textContent = s; })
-      .catch(() => { document.getElementById('mh-date').textContent = ''; });
-  }
-
-  function setMastheadIssue(issue) {
-    const labelEl = document.getElementById('mh-issue-label');
-    if (labelEl) labelEl.textContent = 'גיליון';
-    const [y, m, d] = issue.date.split('-').map(Number);
-    document.getElementById('mh-issue').textContent = issue.number;
-    fetchHebrewDate(new Date(y, m - 1, d))
-      .then(s => { document.getElementById('mh-date').textContent = s; })
-      .catch(() => { document.getElementById('mh-date').textContent = issue.date; });
-  }
-
-  function applyManifestMeta(m) {
-    document.title = m.newspaper_name || 'עמנואל שלי';
-  }
-
-  // ── Featured (home) view ───────────────────────────────────────────────────
-
-  function renderFeatured(issue) {
+  function renderHero(issue) {
     const base = NEWSPAPER_CONFIG.storageBase;
-    const container = document.getElementById('featured-container');
-    container.innerHTML = '';
+    const title = issue.title || `גיליון ${issue.number}`;
 
-    const fig = document.createElement('figure');
-    fig.className = 'featured';
-
+    const cover = $('hero-cover');
+    cover.classList.remove('skeleton');
+    cover.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hero-cover-btn';
+    btn.setAttribute('aria-label', `קריאת ${title}`);
     const img = document.createElement('img');
-    img.src       = `${base}/${issue.cover || issue.thumb}`;
-    img.alt       = `${issue.title || 'גיליון ' + issue.number} — שער`;
-    img.className = 'featured-thumb';
-    img.addEventListener('click', () => openIssue(issue));
+    img.src = `${base}/${issue.cover || issue.thumb}`;
+    img.alt = `שער ${title}`;
+    img.fetchPriority = 'high';
+    btn.append(img);
+    btn.addEventListener('click', () => openIssue(issue));
+    cover.append(btn);
 
-    const cap = document.createElement('figcaption');
-    cap.className = 'featured-caption';
-    cap.innerHTML = `
-      <span class="featured-kicker">הגיליון החדש</span>
-      <span class="featured-title"></span>
-      <span class="featured-meta"></span>
-      <button type="button" class="featured-btn">לקריאת הגיליון ←</button>`;
-    cap.querySelector('.featured-title').textContent = issue.title || `גיליון ${issue.number}`;
-    cap.querySelector('.featured-meta').textContent =
-      `${Archive.formatDate(issue.date)} · ${issue.pages} עמודים`;
-    cap.querySelector('.featured-btn').addEventListener('click', () => openIssue(issue));
+    $('hero-title').textContent = title;
+    const greg = Archive.formatDate(issue.date);
+    $('hero-meta').textContent = `${greg} · ${issue.pages} עמודים`;
+    const [y, m, d] = issue.date.split('-').map(Number);
+    window.hebrewDate(new Date(y, m - 1, d)).then(h => {
+      if (h) $('hero-meta').textContent = `${h} · ${greg} · ${issue.pages} עמודים`;
+    });
 
-    fig.append(img, cap);
-    container.appendChild(fig);
+    const read = $('hero-read');
+    read.disabled = false;
+    read.onclick = () => openIssue(issue);
   }
 
-  function renderPrevIssues(issues) {
-    if (!issues || issues.length === 0) return;
-    const section   = document.getElementById('prev-section');
-    const container = document.getElementById('prev-container');
-    Archive.renderInto(issues, container);
-    section.classList.remove('hidden');
+  function renderHome(issues) {
+    if (!issues.length) {
+      $('hero-cover').classList.remove('skeleton');
+      $('hero-title').textContent = 'עדיין לא פורסמו גיליונות';
+      $('archive').classList.add('hidden');
+      return;
+    }
+    renderHero(issues[0]);
+    Archive.renderInto(issues, $('archive-grid'));
+    $('archive-count').textContent = `${issues.length} גיליונות`;
   }
 
-  // ── Public navigation ──────────────────────────────────────────────────────
+  // ── Navigation ─────────────────────────────────────────────────────────────
 
   function showHome(push = true) {
     Viewer.close();
-    setMastheadToday();
-    if (push && getIssueFromUrl()) clearIssueFromUrl();
+    if (push && getIssueFromUrl()) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('issue');
+      url.searchParams.delete('page');
+      history.pushState({}, '', url.pathname + url.search);
+    }
     _showViewInternal('home');
+    document.title = 'עמנואל שלי — העיתון של עמנואל';
   }
 
   function openIssue(issue, startPage, push = true) {
-    setMastheadIssue(issue);
-    if (push) setIssueInUrl(issue.number);
+    if (push) {
+      const url = new URL(window.location.href);
+      url.hash = '';
+      url.searchParams.set('issue', issue.number);
+      url.searchParams.delete('page');
+      history.pushState({ issue: issue.number }, '', url.toString());
+    }
+    document.title = `${issue.title || 'גיליון ' + issue.number} | עמנואל שלי`;
     Viewer.open(issue, startPage);
   }
 
-  // ── URL helpers ────────────────────────────────────────────────────────────
+  const getIssueFromUrl = () =>
+    parseInt(new URLSearchParams(window.location.search).get('issue'), 10) || null;
+  const getPageFromUrl = () =>
+    parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1;
 
-  function getIssueFromUrl() {
-    return parseInt(new URLSearchParams(window.location.search).get('issue'), 10) || null;
+  function routeFromUrl() {
+    const num = getIssueFromUrl();
+    const found = num && manifest?.issues.find(i => i.number === num);
+    if (found) openIssue(found, getPageFromUrl(), false);
+    else showHome(false);
   }
 
-  function getPageFromUrl() {
-    return parseInt(new URLSearchParams(window.location.search).get('page'), 10) || 1;
-  }
+  // ── Toast ──────────────────────────────────────────────────────────────────
 
-  function setIssueInUrl(num) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('issue', num);
-    url.searchParams.delete('page');
-    history.pushState({ issue: num }, '', url.toString());
-  }
-
-  function clearIssueFromUrl() {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('issue');
-    url.searchParams.delete('page');
-    history.pushState({}, '', url.toString());
-  }
-
-  // ── Error toast ────────────────────────────────────────────────────────────
-
-  let _toastTimer;
+  let toastTimer;
   function showError(msg) {
-    const el = document.getElementById('error-toast');
+    const el = $('error-toast');
     el.textContent = msg;
     el.classList.remove('hidden');
-    clearTimeout(_toastTimer);
-    _toastTimer = setTimeout(() => el.classList.add('hidden'), 5000);
-  }
-
-  // ── Fetch manifest ─────────────────────────────────────────────────────────
-
-  async function fetchManifest() {
-    const res = await fetch(NEWSPAPER_CONFIG.manifestUrl, {
-      cache: 'no-cache',
-      headers: { Accept: 'application/json' },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.add('hidden'), 5000);
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
 
   async function init() {
-    showLoading('טוען...');
-    setMastheadToday();
+    showLoading();
+    $('btn-back').addEventListener('click', () => showHome());
+    window.addEventListener('popstate', routeFromUrl);
 
-    document.getElementById('mh-logo').addEventListener('click', () => showHome());
-    document.getElementById('btn-back').addEventListener('click', () => showHome());
-    const fy = document.getElementById('footer-year');
-    if (fy) fy.textContent = new Date().getFullYear();
-
-    const _masthead = document.getElementById('masthead');
-    window.addEventListener('scroll', () => {
-      _masthead.classList.toggle('masthead--scrolled', window.scrollY > 40);
-    }, { passive: true });
-
-    window.addEventListener('popstate', (e) => {
-      const num = getIssueFromUrl();
-      if (num && manifest) {
-        const found = manifest.issues.find(i => i.number === num);
-        if (found) { openIssue(found, getPageFromUrl(), false); return; }
-      }
-      showHome(false);
+    // Logo / "home" link while inside the viewer → close the viewer without reload
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href="/"], a[href="/#archive"]');
+      if (!a || !getIssueFromUrl()) return;
+      e.preventDefault();
+      showHome();
+      if (a.getAttribute('href') === '/#archive') $('archive').scrollIntoView();
     });
 
     try {
-      manifest = await fetchManifest();
-      applyManifestMeta(manifest);
-
-      const issues = manifest.issues || [];
-      if (issues.length > 0) {
-        latestIssueNum = issues[0].number;
-        setMastheadToday();
-        renderFeatured(issues[0]);
-      }
-      if (issues.length > 1) renderPrevIssues(issues.slice(1, 11)); // max 10 previous
-
-      const targetNum = getIssueFromUrl();
-      if (targetNum) {
-        const found = issues.find(i => i.number === targetNum);
-        if (found) { openIssue(found, getPageFromUrl(), false); return; }
-      }
-
-      if (issues.length === 0) {
-        document.getElementById('featured-container').innerHTML =
-          '<p class="empty-msg">עדיין לא פורסמו גיליונות</p>';
-      }
-      _showViewInternal('home');
-
+      const res = await fetch(NEWSPAPER_CONFIG.manifestUrl, { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      manifest = await res.json();
+      manifest.issues = manifest.issues || [];
+      renderHome(manifest.issues);
+      routeFromUrl();
+      if (location.hash === '#archive' && !getIssueFromUrl()) $('archive').scrollIntoView();
     } catch (err) {
       console.error(err);
-      showError('לא ניתן לטעון את הארכיון. אנא נסה שוב מאוחר יותר.');
       _showViewInternal('home');
+      showError('לא ניתן לטעון את הגיליונות כרגע. נסו שוב מאוחר יותר.');
     }
   }
 

@@ -1,79 +1,57 @@
-// archive.js — Issue card rendering
+// archive.js — issue cards grid
 'use strict';
 
 const Archive = (() => {
   const MONTHS_HE = [
-    'ינואר','פברואר','מרץ','אפריל','מאי','יוני',
-    'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר',
+    'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+    'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
   ];
 
   function formatDate(isoDate) {
     const [y, m, d] = isoDate.split('-').map(Number);
-    return `${d} ${MONTHS_HE[m - 1]} ${y}`;
+    return `${d} ב${MONTHS_HE[m - 1]} ${y}`;
   }
 
-  function groupByYear(issues) {
-    const map = new Map();
-    for (const issue of issues) {
-      const year = issue.date.slice(0, 4);
-      if (!map.has(year)) map.set(year, []);
-      map.get(year).push(issue);
+  function buildCard(issue, isLatest) {
+    const card = document.createElement('a');
+    card.className = 'issue-card';
+    card.href = `/?issue=${issue.number}`;
+    const title = issue.title || `גיליון ${issue.number}`;
+    card.setAttribute('aria-label', `${title} — ${formatDate(issue.date)}`);
+
+    const thumb = document.createElement('div');
+    thumb.className = 'card-thumb';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = '';
+    img.src = `${NEWSPAPER_CONFIG.storageBase}/${issue.thumb}`;
+    img.addEventListener('load', () => thumb.classList.add('loaded'));
+    thumb.append(img);
+    if (isLatest) {
+      const badge = document.createElement('span');
+      badge.className = 'card-badge';
+      badge.textContent = 'חדש';
+      thumb.append(badge);
     }
-    return map;
-  }
 
-  function buildCard(issue) {
-    const card = document.createElement('button');
-    const ioSupported = 'IntersectionObserver' in window;
-    card.className = 'issue-card' + (ioSupported ? ' card-hidden' : '');
-    card.type = 'button';
-    card.setAttribute('aria-label', `${issue.title} — ${formatDate(issue.date)}`);
+    const info = document.createElement('div');
+    info.className = 'card-info';
+    info.innerHTML = '<h3 class="card-title"></h3><p class="card-meta"></p>';
+    info.querySelector('.card-title').textContent = title;
+    info.querySelector('.card-meta').textContent = `${formatDate(issue.date)} · ${issue.pages} עמ׳`;
 
-    const thumbUrl = `${NEWSPAPER_CONFIG.storageBase}/${issue.thumb}`;
-    card.innerHTML = `
-      <div class="card-thumb" aria-hidden="true">
-        <span class="card-thumb-placeholder">&#9636;</span>
-        <img loading="lazy" alt="" src="${thumbUrl}">
-      </div>
-      <div class="card-info">
-        <div class="card-number">גיליון ${issue.number}</div>
-        <div class="card-date">${formatDate(issue.date)}</div>
-        <div class="card-pages">${issue.pages} עמודים</div>
-      </div>
-    `;
-
-    card.querySelector('img').addEventListener('load', () => {
-      const ph = card.querySelector('.card-thumb-placeholder');
-      if (ph) ph.style.display = 'none';
+    card.append(thumb, info);
+    card.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // allow "open in new tab"
+      e.preventDefault();
+      window.App.openIssue(issue);
     });
-
-    card.addEventListener('click', () => window.App.openIssue(issue));
     return card;
   }
 
-  // Render issues as a flat grid (no year grouping)
   function renderInto(issues, container) {
     container.innerHTML = '';
-    if (!issues || issues.length === 0) {
-      container.innerHTML = '<p class="empty-msg">אין גיליונות נוספים</p>';
-      return;
-    }
-    const grid = document.createElement('div');
-    grid.className = 'issues-grid';
-    for (const issue of issues) grid.appendChild(buildCard(issue));
-    container.appendChild(grid);
-
-    if (!('IntersectionObserver' in window)) return;
-
-    const cards = Array.from(grid.querySelectorAll('.issue-card.card-hidden'));
-    const obs = new IntersectionObserver((entries) => {
-      const visible = entries.filter(e => e.isIntersecting);
-      visible.forEach((entry, i) => {
-        setTimeout(() => entry.target.classList.remove('card-hidden'), i * 60);
-        obs.unobserve(entry.target);
-      });
-    }, { threshold: 0.06 });
-    cards.forEach(c => obs.observe(c));
+    issues.forEach((issue, i) => container.appendChild(buildCard(issue, i === 0)));
   }
 
   return { renderInto, formatDate };

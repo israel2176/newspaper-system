@@ -6,70 +6,38 @@
   <title>צור קשר | עמנואל שלי</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
+<body data-page="contact">
+  <header id="site-header" class="site-header"></header>
 
-  <header id="masthead">
-    <div class="masthead-inner">
-      <div class="masthead-side masthead-right"></div>
-      <div class="masthead-center">
-        <a href="index.html" style="text-decoration:none">
-          <img src="img/logo.jpg" alt="עמנואל שלי" class="masthead-logo">
-        </a>
-      </div>
-      <div class="masthead-side masthead-left">
-        <nav class="mh-nav-btns" aria-label="ניווט ראשי">
-          <a class="mh-btn mh-btn-ghost" href="about.html">אודות</a>
-          <a class="mh-btn mh-btn-solid active" href="contact.html">צור קשר</a>
-        </nav>
+  <main class="page">
+    <div class="page-hero">
+      <div class="container">
+        <nav class="breadcrumbs" aria-label="מיקום"><a href="/">עמוד הבית</a> <span aria-hidden="true">/</span> צור קשר</nav>
+        <h1>צור קשר</h1>
+        <p>לפרסום בעיתון, הצעות לכתבות ופניות למערכת.</p>
       </div>
     </div>
-  </header>
-
-  <main class="static-page">
-    <div class="static-inner">
-      <h2 class="static-title">צור קשר</h2>
-      <div class="static-content">
-        <p>לפרסום, הצעות, ופניות לעריכה:</p>
-        <p><strong>דוא"ל:</strong> <a href="mailto:info@example.com">info@example.com</a></p>
-        <p><strong>טלפון:</strong> 000-0000000</p>
+    <div class="container page-body">
+      <div class="contact-grid">
+        <a class="contact-card card" href="tel:0583221232">
+          <span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span>
+          <span class="contact-label">טלפון להזמנת פרסום</span>
+          <span class="contact-value" dir="ltr">0583-221-232</span>
+        </a>
+        <a class="contact-card card" href="mailto:imanuel.sheli@gmail.com">
+          <span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>
+          <span class="contact-label">דואר אלקטרוני</span>
+          <span class="contact-value">imanuel.sheli@gmail.com</span>
+        </a>
       </div>
-      <a href="index.html" class="static-back-btn">← חזרה לעמוד הראשי</a>
     </div>
   </main>
 
-  <footer id="site-footer">
-    <div class="footer-accent"></div>
-    <div class="footer-body">
-      <div class="footer-col">
-        <img src="img/logo.jpg" alt="עמנואל שלי" class="footer-logo">
-        <p class="footer-tagline">עיתון קהילתי שבועי</p>
-      </div>
-      <div class="footer-col">
-        <h3 class="footer-heading">ניווט מהיר</h3>
-        <nav class="footer-nav">
-          <a href="index.html">עמוד ראשי</a>
-          <a href="about.html">אודות העיתון</a>
-          <a href="contact.html">צור קשר</a>
-        </nav>
-      </div>
-      <div class="footer-col">
-        <h3 class="footer-heading">אודות</h3>
-        <p class="footer-info-text">עמנואל שלי הוא עיתון מקומי המוקדש לחיי הקהילה, לאירועים, ולמידע המקומי.</p>
-        <p class="footer-powered">פותח ע"י <a href="https://israelcodes.ovh" target="_blank" rel="noopener">israelcodes</a></p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-bottom-inner">
-        <span>© 2026 עמנואל שלי</span>
-        <span class="footer-bottom-dot" aria-hidden="true">·</span>
-        <span>כל הזכויות שמורות</span>
-      </div>
-    </div>
-  </footer>
-
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="/js/layout.js"></script>
 </body>
 </html>

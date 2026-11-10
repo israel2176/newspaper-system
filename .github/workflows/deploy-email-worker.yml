@@ -1,0 +1,37 @@
+# Deploys the Cloudflare Email Worker (cloudflare/email-worker) that receives the
+# newspaper by email and drops the PDF into inbox/.
+# Needs repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, NEWSPAPER_GITHUB_TOKEN
+name: Deploy email worker
+
+on:
+  push:
+    branches: [master, main]
+    paths: ["cloudflare/email-worker/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloudflare/email-worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN:  ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEWSPAPER_GITHUB_TOKEN: ${{ secrets.NEWSPAPER_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::notice::CLOUDFLARE_API_TOKEN is not set — skipping deploy (see cloudflare/email-worker/README.md)"
+            exit 0
+          fi
+          npx wrangler deploy
+          if [ -n "$NEWSPAPER_GITHUB_TOKEN" ]; then
+            echo "$NEWSPAPER_GITHUB_TOKEN" | npx wrangler secret put GITHUB_TOKEN
+          fi

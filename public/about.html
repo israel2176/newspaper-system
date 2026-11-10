@@ -6,69 +6,31 @@
   <title>אודות | עמנואל שלי</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
+<body data-page="about">
+  <header id="site-header" class="site-header"></header>
 
-  <header id="masthead">
-    <div class="masthead-inner">
-      <div class="masthead-side masthead-right"></div>
-      <div class="masthead-center">
-        <a href="index.html" style="text-decoration:none">
-          <img src="img/logo.jpg" alt="עמנואל שלי" class="masthead-logo">
-        </a>
-      </div>
-      <div class="masthead-side masthead-left">
-        <nav class="mh-nav-btns" aria-label="ניווט ראשי">
-          <a class="mh-btn mh-btn-ghost active" href="about.html">אודות</a>
-          <a class="mh-btn mh-btn-solid" href="contact.html">צור קשר</a>
-        </nav>
+  <main class="page">
+    <div class="page-hero">
+      <div class="container">
+        <nav class="breadcrumbs" aria-label="מיקום"><a href="/">עמוד הבית</a> <span aria-hidden="true">/</span> אודות</nav>
+        <h1>אודות עמנואל שלי</h1>
+        <p>העיתון הקהילתי של עמנואל — הבמה הכי מוכרת בעיר.</p>
       </div>
     </div>
-  </header>
-
-  <main class="static-page">
-    <div class="static-inner">
-      <h2 class="static-title">אודות העיתון</h2>
-      <div class="static-content">
-        <p>עמנואל שלי הוא עיתון מקומי המוקדש לחיי הקהילה, לאירועים, ולמידע המקומי.</p>
-        <p>העיתון יוצא לאור מדי שבוע ומגיע לבתי התושבים.</p>
+    <div class="container page-body">
+      <div class="prose card">
+        <p><strong>עמנואל שלי</strong> הוא עיתון מקומי המוקדש לחיי הקהילה בעמנואל: חדשות מקומיות, אירועים, דבר העורך, מבצעים ופרסומים של עסקים מהעיר והסביבה.</p>
+        <p>העיתון יוצא לאור מדי שבוע ומחולק לבתי התושבים. באתר אפשר לקרוא כל גיליון אונליין, לדפדף בו כמו בעיתון מודפס ולהגדיל כל עמוד לקריאה נוחה.</p>
+        <p><a class="btn btn-primary" href="/">לגיליון האחרון</a></p>
       </div>
-      <a href="index.html" class="static-back-btn">← חזרה לעמוד הראשי</a>
     </div>
   </main>
 
-  <footer id="site-footer">
-    <div class="footer-accent"></div>
-    <div class="footer-body">
-      <div class="footer-col">
-        <img src="img/logo.jpg" alt="עמנואל שלי" class="footer-logo">
-        <p class="footer-tagline">עיתון קהילתי שבועי</p>
-      </div>
-      <div class="footer-col">
-        <h3 class="footer-heading">ניווט מהיר</h3>
-        <nav class="footer-nav">
-          <a href="index.html">עמוד ראשי</a>
-          <a href="about.html">אודות העיתון</a>
-          <a href="contact.html">צור קשר</a>
-        </nav>
-      </div>
-      <div class="footer-col">
-        <h3 class="footer-heading">אודות</h3>
-        <p class="footer-info-text">עמנואל שלי הוא עיתון מקומי המוקדש לחיי הקהילה, לאירועים, ולמידע המקומי.</p>
-        <p class="footer-powered">פותח ע"י <a href="https://israelcodes.ovh" target="_blank" rel="noopener">israelcodes</a></p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-bottom-inner">
-        <span>© 2026 עמנואל שלי</span>
-        <span class="footer-bottom-dot" aria-hidden="true">·</span>
-        <span>כל הזכויות שמורות</span>
-      </div>
-    </div>
-  </footer>
-
+  <footer id="site-footer" class="site-footer"></footer>
+  <script src="/js/layout.js"></script>
 </body>
 </html>

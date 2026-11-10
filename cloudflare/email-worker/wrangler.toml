@@ -1,0 +1,13 @@
+name = "newspaper-email-inbox"
+main = "src/worker.js"
+compatibility_date = "2025-06-01"
+
+[vars]
+GITHUB_REPO   = "israel2176/newspaper-system"
+GITHUB_BRANCH = "master"
+# Optional: comma-separated sender addresses/domains allowed to publish (empty = anyone)
+ALLOWED_SENDERS = ""
+# Optional: also forward every email to this (verified) address, e.g. your personal mailbox
+FORWARD_TO = ""
+
+# Secret (not here!):  npx wrangler secret put GITHUB_TOKEN

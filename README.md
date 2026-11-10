@@ -5,9 +5,11 @@
 ## איך זה עובד
 
 ```
-מייל ייעודי (Gmail)          תיקיית inbox/ במאגר
-        │  (IMAP, כל שעה)            │  (העלאה ידנית דרך GitHub)
-        └──────────────┬─────────────┘
+paper@הדומיין (Cloudflare)    מייל ייעודי (Gmail)     העלאה ידנית
+   │  Email Worker — מיידי       │  IMAP, כל שעה          │  דרך GitHub
+   └──▶ inbox/*.pdf ◀────────────┼────────────────────────┘
+                       │         │
+                       └────┬────┘
                        ▼
      GitHub Actions — scripts/newspaper_pipeline.py
        • ממיר כל עמוד ב-PDF לתמונה (poppler)
@@ -25,10 +27,11 @@
 ```
 public/                  ← האתר (התיקייה ש-Vercel מגיש)
   index.html, about.html, contact.html
-  js/  app.js · viewer.js (דפדפת RTL) · archive.js · config.js
+  js/  app.js · viewer.js (דפדפת RTL) · archive.js · layout.js (כותרת ותחתית) · config.js
   vendor/page-flip.browser.js
   newspaper/manifest.json + <year>/issue-<n>/{cover,thumb}.jpg, pages/page-NNN.jpg
 scripts/newspaper_pipeline.py   ← עיבוד PDF ← עמודים
+cloudflare/email-worker/        ← קבלת מיילים בדומיין שלכם (Cloudflare Email Worker)
 inbox/                          ← תיבה להעלאה ידנית של PDF
 .github/workflows/publish-newspaper.yml
 vercel.json
@@ -41,7 +44,13 @@ vercel.json
 ההגדרות נמצאות ב-`vercel.json`. מכאן כל push ל-`master` מתפרסם לבד.
 כדי לחבר דומיין: **Settings → Domains**.
 
-### 2. תיבת מייל לעיתון (מומלץ: Gmail ייעודי)
+### 2. איך העיתון מגיע? יש לבחור אחת מהאפשרויות
+
+**אפשרות א' (מומלצת): כתובת בדומיין שלכם דרך Cloudflare**
+כל מייל עם PDF לכתובת `paper@הדומיין` עולה לאתר מיד, בלי סיסמאות מייל.
+מדריך: [cloudflare/email-worker/README.md](cloudflare/email-worker/README.md).
+
+**אפשרות ב': תיבת Gmail ייעודית** (נבדקת כל שעה)
 1. פותחים חשבון Gmail חדש, למשל `emanuel.paper.inbox@gmail.com`.
 2. בחשבון החדש מפעילים אימות דו-שלבי, ואז יוצרים **סיסמת אפליקציה** בכתובת https://myaccount.google.com/apppasswords.
 3. במייל האישי, שאליו מגיע העיתון היום, מגדירים העברה אוטומטית:
@@ -53,7 +62,7 @@ vercel.json
 > אפשר גם בלי תיבה ייעודית: לשים את פרטי המייל האישי ולהגדיר `SENDER_FILTER`.
 > תיבה נפרדת בטוחה יותר, כי סיסמת האפליקציה נותנת גישה לכל התיבה.
 
-### 3. סודות ב-GitHub
+### 3. סודות ב-GitHub (לאפשרות ב' בלבד)
 במאגר: **Settings → Secrets and variables → Actions**.
 
 | סוג | שם | ערך |

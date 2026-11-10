@@ -1,64 +1,78 @@
-# כתובת מייל ייעודית לעיתון (Cloudflare)
+<div dir="rtl">
+
+# כתובת מייל לעיתון (Cloudflare)
 
 כל PDF שנשלח לכתובת כמו `paper@הדומיין-שלך` עולה לאתר לבד, תוך כ-3 דקות.
 
-```
-paper@domain ──(Cloudflare Email Routing)──▶ Worker ──▶ inbox/*.pdf ב-GitHub
-                                                         │
-                                       GitHub Actions: המרה לעמודים
-                                                         ▼
-                                                  Vercel מעדכן את האתר
-```
+**איך זה עובד:**
 
-## היתרונות לעומת תיבת Gmail
-- **מיידי:** אין המתנה לבדיקה של כל שעה.
-- **בלי סיסמאות מייל:** אין צורך בסיסמת אפליקציה של Gmail.
-- **חינם:** Email Routing ו-Workers בחינם בתוכנית הבסיסית.
+1. **Cloudflare Email Routing** מקבל את המייל ומעביר אותו לקוד שנמצא בתיקייה הזו (Email Worker).
+2. **הקוד שומר** כל קובץ PDF מצורף בתיקייה `inbox` שבמאגר ב-GitHub.
+3. **GitHub Actions** ממיר את ה-PDF לעמודים.
+4. **Vercel** מעדכן את האתר.
+
+הכול חינמי בתוכנית הבסיסית של Cloudflare.
 
 ## הגדרה — פעם אחת
 
-1. **הפעלת Email Routing**
-   ב-Cloudflare: הדומיין ← **Email** ← **Email Routing** ← **Enable**. רשומות ה-MX נוספות לבד.
-   אם כבר יש לדומיין מייל אצל ספק אחר, בחרו תת-דומיין, למשל `mail.example.com`.
+### שלב 1: הפעלת Email Routing
+1. נכנסים ל-Cloudflare ובוחרים את הדומיין.
+2. בתפריט: **Email ← Email Routing ← Enable**.
+3. Cloudflare מוסיף לבד את רשומות ה-MX.
 
-2. **טוקן GitHub שמאפשר להעלות קבצים למאגר**
-   - נכנסים ל-https://github.com/settings/personal-access-tokens/new.
-   - **Repository access:** Only select repositories ← `newspaper-system`.
-   - **Permissions:** Contents ← **Read and write**.
+> אם כבר יש לדומיין תיבות מייל אצל ספק אחר, השתמשו בתת-דומיין, למשל `mail.example.com`, כדי לא לפגוע בהן.
 
-3. **טוקן Cloudflare**
-   - נכנסים ל-https://dash.cloudflare.com/profile/api-tokens ← **Create Token**.
-   - בוחרים בתבנית **Edit Cloudflare Workers**.
-   - את ה-**Account ID** מעתיקים מעמוד הבית של החשבון, בצד ימין.
+### שלב 2: טוקן GitHub, שמאפשר לשמור קבצים במאגר
+1. נכנסים ל-https://github.com/settings/personal-access-tokens/new.
+2. **Repository access:** בוחרים Only select repositories, ואת המאגר `newspaper-system`.
+3. **Permissions:** בשורה Contents בוחרים **Read and write**.
+4. לוחצים **Generate token** ומעתיקים את הטוקן.
 
-4. **סודות ב-GitHub**
-   במאגר: Settings ← Secrets and variables ← Actions ← New repository secret.
-   - `CLOUDFLARE_API_TOKEN`
-   - `CLOUDFLARE_ACCOUNT_ID`
-   - `NEWSPAPER_GITHUB_TOKEN`: הטוקן משלב 2.
+### שלב 3: טוקן Cloudflare
+1. נכנסים ל-https://dash.cloudflare.com/profile/api-tokens.
+2. לוחצים **Create Token** ובוחרים את התבנית **Edit Cloudflare Workers**.
+3. מעתיקים את הטוקן.
+4. מעתיקים גם את ה-**Account ID**. הוא מופיע בעמוד הראשי של החשבון ב-Cloudflare, בצד.
 
-   אחר כך: **Actions ← Deploy email worker ← Run workflow**.
+### שלב 4: שמירת הטוקנים ב-GitHub
+במאגר: **Settings ← Secrets and variables ← Actions ← New repository secret**. מוסיפים שלושה סודות:
 
-5. **חיבור הכתובת ל-Worker**
-   - Email Routing ← **Routing rules** ← **Create address**.
-   - כתובת: `paper`.
-   - Action: **Send to a Worker** ← `newspaper-email-inbox`.
-
-6. **מעבירים את העיתון לכתובת החדשה.** יש שתי דרכים:
-   - **הכי פשוט:** לבקש מהעיתון להוסיף את `paper@הדומיין` לרשימת התפוצה.
-   - **העברה אוטומטית מהמייל האישי:** ב-Gmail מגדירים מסנן לפי השולח, עם הפעולה "העבר אל" `paper@הדומיין`.
-     - Gmail שולח קוד אימות לכתובת החדשה.
-     - כדי לראות את הקוד, מגדירים זמנית `FORWARD_TO` (ראו בהמשך) עם הכתובת האישית.
-
-## הגדרות רשות (ב-`wrangler.toml`)
-| משתנה | מה עושה |
+| שם | ערך |
 |---|---|
-| `ALLOWED_SENDERS` | רק מיילים מכתובות או דומיינים אלה יפורסמו, למשל `paper.co.il,my@gmail.com`. מומלץ מאוד |
-| `FORWARD_TO` | יעביר כל מייל גם לכתובת הזו. הכתובת צריכה להיות מאומתת ב-Email Routing ← Destination addresses |
+| `CLOUDFLARE_API_TOKEN` | הטוקן משלב 3 |
+| `CLOUDFLARE_ACCOUNT_ID` | ה-Account ID משלב 3 |
+| `NEWSPAPER_GITHUB_TOKEN` | הטוקן משלב 2 |
 
-אחרי שינוי, מריצים שוב את **Deploy email worker**.
+אחר כך מריצים: **Actions ← Deploy email worker ← Run workflow**.
 
-## בדיקה
+### שלב 5: יצירת הכתובת וחיבורה לקוד
+1. ב-Cloudflare: **Email Routing ← Routing rules ← Create address**.
+2. **Custom address:** כותבים `paper`, או כל שם אחר.
+3. **Action:** בוחרים **Send to a Worker**, ואת `newspaper-email-inbox`.
+4. לוחצים **Save**.
+
+### שלב 6: לשלוח את העיתון לכתובת החדשה
+יש שתי דרכים:
+- **הכי פשוט:** לבקש מהעיתון להוסיף את `paper@הדומיין` לרשימת התפוצה.
+- **העברה אוטומטית מהמייל האישי:** מגדירים בתיבה האישית מסנן לפי כתובת השולח של העיתון, עם הפעולה "העבר אל" `paper@הדומיין`.
+  - חלק מספקי המייל שולחים קוד אימות לכתובת החדשה לפני שמאפשרים העברה.
+  - כדי לקבל את הקוד, מגדירים זמנית את `FORWARD_TO` (בטבלה למטה) עם הכתובת האישית.
+
+## הגדרות רשות
+
+ההגדרות נמצאות בקובץ `wrangler.toml`. אחרי כל שינוי מריצים שוב את **Deploy email worker**.
+
+| הגדרה | מה היא עושה |
+|---|---|
+| `ALLOWED_SENDERS` | רק מיילים מהכתובות או מהדומיינים שברשימה יפורסמו באתר. כותבים אותם מופרדים בפסיקים. מומלץ מאוד, כדי שזרים לא יוכלו לפרסם |
+| `FORWARD_TO` | כל מייל שמגיע יועבר גם לכתובת הזו. את הכתובת צריך לאמת קודם ב-Cloudflare: **Email Routing ← Destination addresses** |
+
+## בדיקה (למפתחים)
+
+</div>
+
 ```bash
-cd cloudflare/email-worker && npm ci && TEST_PDF=/path/to/file.pdf npm test
+cd cloudflare/email-worker
+npm ci
+TEST_PDF=/path/to/file.pdf npm test
 ```
